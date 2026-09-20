@@ -17,7 +17,7 @@ Singleton {
     property string query: ""
 
     function ensurePrefix(prefix) {
-        if ([Config.options.search.prefix.action, Config.options.search.prefix.app, Config.options.search.prefix.clipboard, Config.options.search.prefix.emojis, Config.options.search.prefix.symbols, Config.options.search.prefix.math, Config.options.search.prefix.shellCommand, Config.options.search.prefix.webSearch,].some(i => root.query.startsWith(i))) {
+        if ([Config.options.search.prefix.action, Config.options.search.prefix.app, Config.options.search.prefix.clipboard, Config.options.search.prefix.emojis, Config.options.search.prefix.symbols, Config.options.search.prefix.math, Config.options.search.prefix.shellCommand, Config.options.search.prefix.webSearch, Config.options.search.prefix.file,].some(i => root.query.startsWith(i))) {
             root.query = prefix + root.query.slice(1);
         } else {
             root.query = prefix + root.query;
@@ -271,6 +271,127 @@ Singleton {
         }
     }
 
+    ////////////////// File / folder search (fd) //////////////////
+
+    // type:xxx maps to one of these groups when it matches, otherwise xxx is used as a literal extension
+    property var fileTypeGroups: ({
+        pdf: ["pdf"],
+        doc: ["doc", "docx", "odt", "rtf", "txt", "md"],
+        sheet: ["xls", "xlsx", "ods", "csv"],
+        slide: ["ppt", "pptx", "odp"],
+        image: ["png", "jpg", "jpeg", "webp", "gif", "svg", "bmp"],
+        video: ["mp4", "mkv", "webm", "mov", "avi"],
+        audio: ["mp3", "flac", "wav", "ogg", "m4a"],
+        archive: ["zip", "tar", "gz", "7z", "rar", "xz"],
+    })
+
+    // Latest results from fd, one raw path per line (directories end with "/")
+    property var fileSearchResults: []
+    // The raw search text (still containing any type:/exclude: keywords) that
+    // fileSearchResults currently corresponds to. Used to avoid re-triggering fd every
+    // time `results` re-evaluates because fileSearchResults itself just changed.
+    property string lastFileSearchQuery: ""
+
+    // type:folder / type:dir / type:directory -> directories only (-t d)
+    // type:file                               -> files only (-t f)
+    // These are mutually exclusive with the extension groups below (folders have no extension)
+    property var fileTypeAliases: ({
+        folder: "d", dir: "d", directory: "d",
+        file: "f",
+    })
+
+    // Opens `path` (a folder, or a file's parent folder) in Config.options.apps.fileManager
+    // if set, otherwise falls back to xdg-open. Bypassing xdg-open is useful when the
+    // system has no correct inode/directory mime association (common on bare Hyprland
+    // setups), which otherwise makes xdg-open fall back to something unexpected.
+    function revealInFileManager(path) {
+        const fm = (Config.options.apps.fileManager ?? "").trim();
+        if (fm.length > 0) {
+            Quickshell.execDetached(fm.split(/\s+/).concat([path]));
+        } else {
+            Quickshell.execDetached(["xdg-open", path]);
+        }
+    }
+
+    // Parses "type:xxx" and "exclude:xxx" keywords out of the query and turns
+    // the rest into an argv list for fd. Both keywords can be repeated.
+    function buildFdArgs(rawQuery) {
+        let text = rawQuery;
+        let extensions = [];
+        let excludes = [];
+        let typeFilter = null; // "d" (folders only) or "f" (files only), via type:folder / type:file
+
+        text = text.replace(/\btype:(\S+)/gi, (match, value) => {
+            const key = value.toLowerCase();
+            if (root.fileTypeAliases[key]) {
+                typeFilter = root.fileTypeAliases[key];
+            } else {
+                extensions = extensions.concat(root.fileTypeGroups[key] ?? [key]);
+            }
+            return " ";
+        });
+        text = text.replace(/\bexclude:(\S+)/gi, (match, value) => {
+            excludes.push(value);
+            return " ";
+        });
+        text = text.trim();
+
+        const roots = Config.options.search.fileSearchPaths.length > 0
+            ? Config.options.search.fileSearchPaths
+            : [FileUtils.trimFileProtocol(Directories.home)];
+
+        let args = ["--color", "never", "--max-results", "30"];
+        // Fixed-strings = plain substring search. Only makes sense when there's
+        // actual text left to search for; an empty --fixed-strings pattern
+        // behaves differently from an empty regex pattern (which matches everything).
+        if (text.length > 0)
+            args.push("--fixed-strings");
+        if (typeFilter)
+            args = args.concat(["--type", typeFilter]);
+        // Folders have no extension, so type:folder + type:pdf together would
+        // just match nothing with fd - skip the (meaningless) extension filter in that case
+        if (typeFilter !== "d") {
+            for (const ext of extensions)
+                args = args.concat(["--extension", ext]);
+        }
+        for (const excl of excludes)
+            args = args.concat(["--exclude", `*${excl}*`]);
+        args.push("--"); // guard against a search term that looks like a flag
+        args.push(text); // "" here means "match everything" (see above)
+        return args.concat(roots);
+    }
+
+    Timer {
+        id: fileSearchTimer
+        interval: Config.options.search.fileResultDelay
+        onTriggered: {
+            if (!root.query.startsWith(Config.options.search.prefix.file)) return;
+            const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.file);
+            fileSearchProc.search(root.buildFdArgs(searchString));
+        }
+    }
+
+    Process {
+        id: fileSearchProc
+        property var lines: []
+        function search(args) {
+            fileSearchProc.running = false;
+            fileSearchProc.lines = [];
+            fileSearchProc.command = ["fd"].concat(args);
+            fileSearchProc.running = true;
+        }
+        stdout: SplitParser {
+            onRead: data => {
+                if (data.length > 0)
+                    fileSearchProc.lines.push(data);
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            // Batched into a single property write so `results` only recomputes once per search
+            root.fileSearchResults = fileSearchProc.lines.slice();
+        }
+    }
+
     property list<var> results: {
         // Search results are handled here
         ////////////////// Skip? //////////////////
@@ -360,6 +481,54 @@ Singleton {
                     execute: () => {
                         Quickshell.clipboardText = keyStr;
                     }
+                });
+            }).filter(Boolean);
+        } else if (root.query.startsWith(Config.options.search.prefix.file)) {
+            // Files & folders (fd), supports "type:pdf" and "exclude:name" keywords
+            const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.file);
+
+            if (searchString.trim().length === 0) {
+                // Bare "!" with nothing typed yet: don't dump the whole home directory
+                root.lastFileSearchQuery = "";
+                if (root.fileSearchResults.length > 0)
+                    root.fileSearchResults = [];
+                return [];
+            }
+
+            // Only (re)trigger a search when the text actually changed. Without this
+            // guard, fresh results landing in fileSearchResults would themselves
+            // cause `results` to re-evaluate, which would restart the timer again,
+            // forever, even with no new keystroke.
+            if (searchString !== root.lastFileSearchQuery) {
+                root.lastFileSearchQuery = searchString;
+                fileSearchTimer.restart();
+            }
+
+            return root.fileSearchResults.map(rawPath => {
+                const isDir = rawPath.endsWith("/");
+                const cleanPath = isDir ? rawPath.slice(0, -1) : rawPath;
+                const parentPath = FileUtils.parentDirectory(cleanPath);
+                return resultComp.createObject(null, {
+                    name: FileUtils.fileNameForPath(cleanPath),
+                    comment: cleanPath,
+                    type: isDir ? Translation.tr("Folder") : Translation.tr("File"),
+                    iconName: isDir ? "folder" : "description",
+                    iconType: LauncherSearchResult.IconType.Material,
+                    verb: Translation.tr("Open"),
+                    execute: () => {
+                        if (isDir)
+                            root.revealInFileManager(cleanPath);
+                        else
+                            Quickshell.execDetached(["xdg-open", cleanPath]);
+                    },
+                    actions: [resultComp.createObject(null, {
+                        name: Translation.tr("Show in file manager"),
+                        iconName: "folder_open",
+                        iconType: LauncherSearchResult.IconType.Material,
+                        execute: () => {
+                            root.revealInFileManager(parentPath);
+                        }
+                    })]
                 });
             }).filter(Boolean);
         } else if (root.query.startsWith(Config.options.search.prefix.symbols)) {

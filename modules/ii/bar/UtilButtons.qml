@@ -183,31 +183,6 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.utilButtons.showWallpaperToggle
-            visible: active
-            sourceComponent: isMaterial ? wallpaperM3 : legacyWallpaper
-        }
-        Component {
-            id: wallpaperM3
-            UtilButton {
-                iconText: "imagesmode"
-                onClicked: GlobalStates.wallpaperSelectorOpen = !GlobalStates.wallpaperSelectorOpen
-            }
-        }
-        Component {
-            id: legacyWallpaper
-            CircleUtilButton {
-                onClicked: GlobalStates.wallpaperSelectorOpen = !GlobalStates.wallpaperSelectorOpen
-                MaterialSymbol {
-                    horizontalAlignment: Qt.AlignHCenter
-                    fill: 0; text: "imagesmode"
-                    iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
-                }
-            }
-        }
-
-        Loader {
             active: Config.options.bar.utilButtons.showMicToggle
             visible: active
             sourceComponent: isMaterial ? micM3 : legacyMic

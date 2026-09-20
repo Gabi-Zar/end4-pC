@@ -319,26 +319,17 @@ Item {
                         }
                     }
 
-                    // Wallpaper
+                    // Workspace preview card (native wallpaper thumbnail removed)
                     Rectangle {
                         id: wsCard
                         anchors.centerIn: parent
                         width: parent.width * Config.options.overview.scale
                         height: parent.height
                         radius: Appearance.rounding.large
-                        color: "red"
+                        color: Appearance.colors.colLayer1
 
                         Behavior on color { ColorAnimation { duration: 200 } }
                         Behavior on border.color { ColorAnimation { duration: 200 } }
-
-                        Image {
-                            id: ovBgSource
-                            anchors.fill: parent
-                            source: Config.options.background.wallpaperPath
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            cache: true
-                        }
 
                         StyledText {
                             visible: rowItem.wsWindows.length === 0

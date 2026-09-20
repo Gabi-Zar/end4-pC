@@ -270,6 +270,19 @@ ContentPage {
                             }
                         }
                     }
+                    ConfigRow {
+                        uniform: true
+                        ConfigTextArea {
+                            Layout.fillWidth: true
+                            buttonIcon: "folder"
+                            fieldWidth: 100
+                            text: Translation.tr("File search")
+                            value: Config.options.search.prefix.file
+                            onValueChanged: {
+                                Config.options.search.prefix.file = value;
+                            }
+                        }
+                    }
                 }
             }
             ContentSubsection {

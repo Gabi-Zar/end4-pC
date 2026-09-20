@@ -46,7 +46,6 @@ ShellRoot {
         FirstRunExperience.load()
         ConflictKiller.load()
         Cliphist.refresh()
-        Wallpapers.load()
         Updates.load()
         LyricsService.restartLyrics()
     }

@@ -16,15 +16,11 @@ Singleton {
     property string syntaxHighlightingTheme
 
     // Transparency. The quadratic functions were derived from analysis of hand-picked transparency values.
-    ColorQuantizer {
-        id: wallColorQuant
-        property string wallpaperPath: Config.options.background.wallpaperPath
-        property bool wallpaperIsVideo: wallpaperPath.endsWith(".mp4") || wallpaperPath.endsWith(".webm") || wallpaperPath.endsWith(".mkv") || wallpaperPath.endsWith(".avi") || wallpaperPath.endsWith(".mov")
-        source: Qt.resolvedUrl(wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath)
-        depth: 0 // 2^0 = 1 color
-        rescaleSize: 10
-    }
-    property real wallpaperVibrancy: (wallColorQuant.colors[0]?.hslSaturation + wallColorQuant.colors[0]?.hslLightness) / 2
+    // Used to be derived live from the wallpaper's dominant color; now that wallpapers
+    // are managed externally (skwd-wall), there's no local image to sample here anymore,
+    // so this is a fixed neutral value. Tune it directly, or disable "automatic"
+    // transparency in Settings > Interface and set backgroundTransparency manually instead.
+    property real wallpaperVibrancy: 0.5
     property real autoBackgroundTransparency: { // y = 0.5768x^2 - 0.759x + 0.2896
         let x = wallpaperVibrancy
         let y = 0.5768 * (x * x) - 0.759 * (x) + 0.2896
@@ -456,10 +452,6 @@ Singleton {
         property real baseVerticalBarWidth: 46
         property real verticalBarWidth: Config.options.bar.cornerStyle === 1 ? 
             (baseVerticalBarWidth + root.sizes.hyprlandGapsOut * 2) : baseVerticalBarWidth
-        property real wallpaperSelectorWidth: 1200
-        property real wallpaperSelectorHeight: 690
-        property real wallpaperSelectorItemMargins: 8
-        property real wallpaperSelectorItemPadding: 6
     }
 
     syntaxHighlightingTheme: root.m3colors.darkmode ? "Monokai" : "ayu Light"

@@ -103,7 +103,21 @@ RippleButton {
         anchors.rightMargin: root.horizontalMargin
     }
 
+    // For results that expose it (files/folders), runs the "Show in file manager"
+    // action instead of the normal open action. Returns false when the entry
+    // has no such action, so callers can fall back to the normal behavior.
+    function tryShowInFileManager() {
+        const revealAction = (root.entry?.actions ?? []).find(action => action.name == Translation.tr("Show in file manager"));
+        if (revealAction) {
+            GlobalStates.overviewOpen = false
+            revealAction.execute()
+            return true;
+        }
+        return false;
+    }
+
     onClicked: {
+        if ((root.lastClickModifiers & Qt.ControlModifier) && root.tryShowInFileManager()) return;
         GlobalStates.overviewOpen = false
         root.itemExecute()
     }
@@ -114,6 +128,10 @@ RippleButton {
             if (deleteAction) {
                 deleteAction.execute()
             }
+        } else if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ControlModifier)) {
+            root.keyboardDown = true
+            if (!root.tryShowInFileManager()) root.clicked()
+            event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             root.keyboardDown = true
             root.clicked()

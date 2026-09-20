@@ -31,17 +31,11 @@ Singleton {
     property bool sessionOpen: false
     property bool superDown: false
     property bool superReleaseMightTrigger: true
-    property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
     property string settingsPage: ""
     property Item currentPageInstance: null
     property list<real> visualizerPoints: []
     property bool desktopWidgetKeyboardFocus: false
-    property bool desktopMenuOpen: false
-    property var desktopMenuScreen: null
-    property real desktopMenuX: 0
-    property real desktopMenuY: 0
-    property string wallpaperSelectorTarget: "wallpaper"
     property bool dropShelfOpen: false
     property real dropShelfX: 0
     property real dropShelfY: 0
@@ -53,28 +47,11 @@ Singleton {
         || Config.options.bar.layouts.middleLayout.includes("dynamicIsland")
         || Config.options.bar.layouts.rightLayout.includes("dynamicIsland")
 
-    signal centeredWallpaperThumpRequested()
-
-    // Shared by desktop (Background) and lock screen (LockSurface) scroll-to-cycle
-    readonly property var centeredShapeOptions: [
-        "Circle", "Square", "Slanted", "Arch", "Arrow", "SemiCircle", "Oval", "Pill",
-        "Triangle", "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny", "VerySunny",
-        "Cookie4Sided", "Cookie6Sided", "Cookie7Sided", "Cookie9Sided", "Cookie12Sided",
-        "Ghostish", "Clover4Leaf", "Clover8Leaf", "Burst", "SoftBurst", "Flower",
-        "Puffy", "PuffyDiamond", "PixelCircle", "Bun", "Heart"
-    ]
-    function cycleCenteredWallpaperShape(direction) {
-        const opts = root.centeredShapeOptions
-        const i = opts.indexOf(Config.options.background.centeredWallpaperShape)
-        Config.options.background.centeredWallpaperShape = opts[(i + direction + opts.length) % opts.length]
-    }
-
     readonly property var hotCornerOptions: [
         { displayName: Translation.tr("None"),                  value: "none" },
         { displayName: Translation.tr("Left Sidebar"),           value: "sidebarLeftOpen" },
         { displayName: Translation.tr("Right Sidebar"),          value: "sidebarRightOpen" },
         { displayName: Translation.tr("Overview Launcher"),               value: "overviewOpen" },
-        { displayName: Translation.tr("Wallpaper Selector"),     value: "wallpaperSelectorOpen" },
         { displayName: Translation.tr("Media Controls"),         value: "mediaControlsOpen" },
         { displayName: Translation.tr("Overlay"),                value: "overlayOpen" },
         { displayName: Translation.tr("ScreenShot Region"),        value: "regionSelectorOpen" },
@@ -116,20 +93,5 @@ Singleton {
         description: "Hold to show workspace numbers, release to show icons"
         onPressed: { root.superDown = true }
         onReleased: { root.superDown = false }
-    }
-
-    IpcHandler {
-        target: "background"
-        function toggleCenteredWallpaper(): void {
-            Config.options.background.centeredWallpaper = !Config.options.background.centeredWallpaper
-        }
-    }
-
-     CompositorGlobalShortcut {
-        name: "centeredWallpaperToggle"
-        description: "Toggles centered wallpaper"
-        onPressed: {
-            Config.options.background.centeredWallpaper = !Config.options.background.centeredWallpaper
-        }
     }
 }

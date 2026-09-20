@@ -65,51 +65,17 @@ AbstractWidget {
         return onNormalBackground ? Appearance.colors.colOnLayer0 : adaptiveColor;
     }
 
-    property bool wallpaperIsVideo: Config.options.background.wallpaperPath.endsWith(".mp4") || Config.options.background.wallpaperPath.endsWith(".webm") || Config.options.background.wallpaperPath.endsWith(".mkv") || Config.options.background.wallpaperPath.endsWith(".avi") || Config.options.background.wallpaperPath.endsWith(".mov")
-    property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath
-    
-    onWallpaperPathChanged: refreshPlacementIfNeeded()
+    // The "leastBusy"/"mostBusy" auto-placement strategies used to analyze the actual
+    // wallpaper image to find an empty region and a dominant color for text contrast.
+    // Wallpapers are now managed externally (skwd-wall) with no local path to analyze,
+    // so these strategies now behave like "free" (last saved position, default color).
     onPlacementStrategyChanged: refreshPlacementIfNeeded()
     Connections {
         target: Config
         function onReadyChanged() { refreshPlacementIfNeeded() }
     }
     function refreshPlacementIfNeeded() {
-        if (!Config.ready) return;
-        if (root.placementStrategy === "free" && !root.needsColText) return;
-        leastBusyRegionProc.wallpaperPath = root.wallpaperPath;
-        leastBusyRegionProc.running = false;
-        leastBusyRegionProc.running = true;
-    }
-    Process {
-        id: leastBusyRegionProc
-        property string wallpaperPath: root.wallpaperPath
-        // TODO: make these less arbitrary
-        property int contentWidth: 300
-        property int contentHeight: 300
-        property int horizontalPadding: 200
-        property int verticalPadding: 200
-        command: [Quickshell.shellPath("scripts/images/least-busy-region-venv.sh")
-            , "--screen-width", Math.round(root.scaledScreenWidth)
-            , "--screen-height", Math.round(root.scaledScreenHeight)
-            , "--width", contentWidth
-            , "--height", contentHeight
-            , "--horizontal-padding", horizontalPadding
-            , "--vertical-padding", verticalPadding
-            , wallpaperPath
-            , ...(root.placementStrategy === "mostBusy" ? ["--busiest"] : [])
-        ]
-        stdout: StdioCollector {
-            id: leastBusyRegionOutputCollector
-            onStreamFinished: {
-                const output = leastBusyRegionOutputCollector.text;
-                if (output.length === 0) return;
-                const parsedContent = JSON.parse(output);
-                root.dominantColor = parsedContent.dominant_color || Appearance.colors.colPrimary;
-                if (root.placementStrategy === "free") return;
-                root.targetX = parsedContent.center_x * root.wallpaperScale - root.width / 2;
-                root.targetY  = parsedContent.center_y * root.wallpaperScale - root.height / 2;
-            }
-        }
+        // No-op: kept only so the "leastBusy"/"mostBusy" config values don't error out
+        // if still present from before. Nothing left to analyze without a wallpaper path.
     }
 }

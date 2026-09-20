@@ -78,10 +78,9 @@ ContentPage {
 
         ContentSection {
             icon: "screenshot_monitor"
-            title: Translation.tr("Wallpaper & Colors")
+            title: Translation.tr("Colors")
             shape: MaterialShape.Shape.Puffy
             Layout.fillWidth: true
-            collapsible: false
 
             RowLayout {
                 Layout.fillWidth: true
@@ -94,23 +93,6 @@ ContentPage {
                     color: Appearance.colors.colLayer2
                     clip: true
 
-                    StyledImage {
-                        anchors.fill: parent
-                        sourceSize.width: isMinimal ? 600 : 420
-                        sourceSize.height: isMinimal ? 400 : 280
-                        fillMode: Image.PreserveAspectCrop
-                        source: /\.(mp4|webm|mkv|avi|mov)$/i.test(Config.options.background.wallpaperPath)
-                            ? Config.options.background.thumbnailPath
-                            : Config.options.background.wallpaperPath
-                        cache: false
-                        layer.enabled: true
-                        layer.effect: OpacityMask {
-                            maskSource: Rectangle {
-                                width: isMinimal ? 600 : 420; height: isMinimal ? 400 : 280
-                                radius: Appearance.rounding.large - 3
-                            }
-                        }
-                    }
 
                     ToolbarPairedFab {
                         anchors.bottom: parent.bottom
@@ -298,7 +280,6 @@ ContentPage {
             title: Translation.tr("Bar & Screen")
             shape: MaterialShape.Shape.ClamShell
             Layout.fillWidth: true
-            collapsible: false
             visible: !isMinimal
             GroupedList {
                 ConfigSelectionArray {

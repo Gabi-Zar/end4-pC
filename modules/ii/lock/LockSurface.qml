@@ -110,60 +110,8 @@ MouseArea {
     //     }
     // }
 
-    Loader {
-        anchors.fill: parent
-        z: -1
-        active: WM.compositor === "niri"
-
-        sourceComponent: Item {
-            anchors.fill: parent
-
-            Image {
-                id: lockBgSource
-                anchors.fill: parent
-                source: Config.options.background.wallpaperPath
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
-                visible: false
-            }
-            FastBlur {
-                anchors.fill: parent
-                source: lockBgSource
-                radius: 0 // fixme
-            }
-        }
-    }
-
-    // Clicking the centered wallpaper (a square around the screen center
-    // matching its locked size) plays the heartbeat thump on the background.
-    // Keeps the password field focused like any other lock-screen press.
-    MouseArea {
-        id: centeredWallpaperThumpArea
-        z: 1
-        width: Math.max(1, Config.options.background.centeredWallpaperSize)
-        height: width
-        anchors.centerIn: parent
-        visible: Config.options.background.centeredWallpaper
-        onClicked: {
-            root.forceFieldFocus()
-            GlobalStates.centeredWallpaperThumpRequested()
-        }
-        // Scroll cycles the centered wallpaper shape (up = next, down = previous),
-        // same cooldown as the desktop so fast scrolling can't skip shapes.
-        onWheel: (wheel) => {
-            if (!Config.options.background.centeredWallpaperShapeCycle) return
-            if (shapeCycleCooldown.running) return
-            root.forceFieldFocus()
-            GlobalStates.cycleCenteredWallpaperShape(wheel.angleDelta.y > 0 ? 1 : -1)
-            shapeCycleCooldown.restart()
-            wheel.accepted = true
-        }
-        Timer {
-            id: shapeCycleCooldown
-            interval: 400
-        }
-    }
+    // Native wallpaper rendering removed - skwd-wall (external, on the Wayland
+    // background layer) shows through since nothing here draws over it anymore.
 
     // Main toolbar: password box
     Toolbar {

@@ -565,12 +565,6 @@ ContentPage {
                         checked: Config.options.bar.utilButtons.showScreenRecord
                         onCheckedChanged: { Config.options.bar.utilButtons.showScreenRecord = checked }
                     }
-                    ConfigSwitch {
-                        buttonIcon: "imagesmode"
-                        text: Translation.tr("Wallpapers Toggle")
-                        checked: Config.options.bar.utilButtons.showWallpaperToggle
-                        onCheckedChanged: { Config.options.bar.utilButtons.showWallpaperToggle = checked }
-                    }
                 }
             }
         }

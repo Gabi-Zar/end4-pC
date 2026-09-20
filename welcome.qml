@@ -42,18 +42,6 @@ ApplicationWindow {
     color: Appearance.m3colors.m3background
 
     Process {
-        id: konachanWallProc
-        property string status: ""
-        command: ["bash", "-c", Quickshell.shellPath("scripts/colors/random/random_konachan_wall.sh")]
-        stdout: SplitParser {
-            onRead: data => {
-                console.log(`Konachan wall proc output: ${data}`);
-                konachanWallProc.status = data.trim();
-            }
-        }
-    }
-
-    Process {
         id: translationProc
         property string locale: ""
         command: [Directories.aiTranslationScriptPath, translationProc.locale]
@@ -266,7 +254,7 @@ ApplicationWindow {
 
                 ContentSection {
                     icon: "format_paint"
-                    title: Translation.tr("Style & wallpaper")
+                    title: Translation.tr("Style")
 
                     ButtonGroup {
                         Layout.alignment: Qt.AlignHCenter
@@ -278,63 +266,9 @@ ApplicationWindow {
                         }
                     }
 
-                    RowLayout {
-                        Layout.alignment: Qt.AlignHCenter
-                        RippleButtonWithIcon {
-                            id: rndWallBtn
-                            visible: Config.options.policies.weeb === 1
-                            Layout.alignment: Qt.AlignHCenter
-                            buttonRadius: Appearance.rounding.small
-                            materialIcon: "ifl"
-                            mainText: konachanWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random: Konachan")
-                            onClicked: {
-                                console.log(konachanWallProc.command.join(" "));
-                                konachanWallProc.running = true;
-                            }
-                            StyledToolTip {
-                                text: Translation.tr("Random SFW Anime wallpaper from Konachan\nImage is saved to ~/Pictures/Wallpapers")
-                            }
-                        }
-                        RippleButtonWithIcon {
-                            materialIcon: "wallpaper"
-                            StyledToolTip {
-                                text: Translation.tr("Pick wallpaper image on your system")
-                            }
-                            onClicked: {
-                                Quickshell.execDetached([`${Directories.wallpaperSwitchScriptPath}`]);
-                            }
-                            mainContentComponent: Component {
-                                RowLayout {
-                                    spacing: 10
-                                    StyledText {
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        text: Translation.tr("Choose file")
-                                        color: Appearance.colors.colOnSecondaryContainer
-                                    }
-                                    RowLayout {
-                                        spacing: 3
-                                        KeyboardKey {
-                                            key: "Ctrl"
-                                        }
-                                        KeyboardKey {
-                                            key: "󰖳"
-                                        }
-                                        StyledText {
-                                            Layout.alignment: Qt.AlignVCenter
-                                            text: "+"
-                                        }
-                                        KeyboardKey {
-                                            key: "T"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
                     NoticeBox {
                         Layout.fillWidth: true
-                        text: Translation.tr("Change any time later with /dark, /light, /wallpaper in the launcher\nIf the shell's colors aren't changing:\n    1. Open the right sidebar with Super+N\n    2. Click \"Reload Hyprland & Quickshell\" in the top-right corner")
+                        text: Translation.tr("Change any time later with /dark, /light in the launcher\nIf the shell's colors aren't changing:\n    1. Open the right sidebar with Super+N\n    2. Click \"Reload Hyprland & Quickshell\" in the top-right corner")
                     }
                 }
 
