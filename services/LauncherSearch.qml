@@ -340,7 +340,13 @@ Singleton {
             ? Config.options.search.fileSearchPaths
             : [FileUtils.trimFileProtocol(Directories.home)];
 
-        let args = ["--color", "never", "--max-results", "30"];
+        // No small --max-results here on purpose: a low count cap makes a fast drive's
+        // results alone satisfy it before a slower secondary drive ever gets a chance to
+        // contribute anything, since fd stops ALL workers the instant the cap is hit.
+        // The real cutoff is fileSearchTimeoutTimer below (time-based, so every configured
+        // search root gets a fair chance); this is just a circuit breaker against a truly
+        // pathological case (e.g. root search path set to "/").
+        let args = ["--color", "never", "--max-results", "2000"];
         // Fixed-strings = plain substring search. Only makes sense when there's
         // actual text left to search for; an empty --fixed-strings pattern
         // behaves differently from an empty regex pattern (which matches everything).
@@ -355,6 +361,9 @@ Singleton {
                 args = args.concat(["--extension", ext]);
         }
         for (const excl of excludes)
+            args = args.concat(["--exclude", `*${excl}*`]);
+        // Paths set in Settings > Services > always exclude from file search
+        for (const excl of Config.options.search.fileExcludePaths)
             args = args.concat(["--exclude", `*${excl}*`]);
         args.push("--"); // guard against a search term that looks like a flag
         args.push(text); // "" here means "match everything" (see above)
@@ -371,6 +380,18 @@ Singleton {
         }
     }
 
+    // Lets fd run for a few seconds before cutting it off, so a slower secondary
+    // drive/HDD gets real time to contribute results instead of the search
+    // finishing the instant a fast drive alone satisfies a result-count cap.
+    Timer {
+        id: fileSearchTimeoutTimer
+        interval: Config.options.search.fileSearchTimeout
+        onTriggered: {
+            if (fileSearchProc.running)
+                fileSearchProc.running = false; // still flows through onExited below
+        }
+    }
+
     Process {
         id: fileSearchProc
         property var lines: []
@@ -379,6 +400,7 @@ Singleton {
             fileSearchProc.lines = [];
             fileSearchProc.command = ["fd"].concat(args);
             fileSearchProc.running = true;
+            fileSearchTimeoutTimer.restart();
         }
         stdout: SplitParser {
             onRead: data => {
@@ -387,6 +409,7 @@ Singleton {
             }
         }
         onExited: (exitCode, exitStatus) => {
+            fileSearchTimeoutTimer.stop();
             // Batched into a single property write so `results` only recomputes once per search
             root.fileSearchResults = fileSearchProc.lines.slice();
         }
@@ -504,7 +527,7 @@ Singleton {
                 fileSearchTimer.restart();
             }
 
-            return root.fileSearchResults.map(rawPath => {
+            return root.fileSearchResults.slice(0, 60).map(rawPath => {
                 const isDir = rawPath.endsWith("/");
                 const cleanPath = isDir ? rawPath.slice(0, -1) : rawPath;
                 const parentPath = FileUtils.parentDirectory(cleanPath);

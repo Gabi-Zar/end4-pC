@@ -247,8 +247,9 @@ RippleButton {
                     text: root.selected ? root.itemName : root.displayContent
                 }
             }
-            StyledText { // Symbol tags / description
-                visible: root.itemTags !== "" && root.itemType === Translation.tr("Symbol")
+            StyledText { // Symbol tags / description / file path
+                visible: root.itemTags !== "" && (root.itemType === Translation.tr("Symbol")
+                    || ((root.itemType === Translation.tr("File") || root.itemType === Translation.tr("Folder")) && Config.options.search.showFileSearchPath))
                 Layout.fillWidth: true
                 font.pixelSize: Appearance.font.pixelSize.smaller
                 color: root.selected ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext

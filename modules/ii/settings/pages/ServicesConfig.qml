@@ -286,6 +286,50 @@ ContentPage {
                 }
             }
             ContentSubsection {
+                title: Translation.tr("File search paths")
+
+                GroupedList {
+                    ConfigRow {
+                        uniform: true
+                        ConfigSpinBox {
+                            icon: "hourglass_bottom"
+                            text: Translation.tr("Search timeout (ms)")
+                            value: Config.options.search.fileSearchTimeout
+                            from: 500; to: 10000; stepSize: 500
+                            onValueChanged: { Config.options.search.fileSearchTimeout = value }
+                        }
+                        ConfigSwitch {
+                            buttonIcon: "route"
+                            text: Translation.tr("Show full path in results")
+                            checked: Config.options.search.showFileSearchPath
+                            onCheckedChanged: { Config.options.search.showFileSearchPath = checked }
+                        }
+                    }
+                    ConfigTextArea {
+                        Layout.fillWidth: true
+                        buttonIcon: "folder_open"
+                        fieldWidth: 300
+                        text: Translation.tr("Search folders")
+                        description: Translation.tr("Comma-separated. Empty = your home folder only. Add other mount points here, e.g. an HDD: /mnt/hdd")
+                        value: Config.options.search.fileSearchPaths.join(", ")
+                        onValueChanged: {
+                            Config.options.search.fileSearchPaths = value.split(",").map(s => s.trim()).filter(s => s.length > 0);
+                        }
+                    }
+                    ConfigTextArea {
+                        Layout.fillWidth: true
+                        buttonIcon: "folder_off"
+                        fieldWidth: 300
+                        text: Translation.tr("Always exclude")
+                        description: Translation.tr("Comma-separated. Any file/folder whose path contains one of these is always skipped, e.g.: node_modules, .cache")
+                        value: Config.options.search.fileExcludePaths.join(", ")
+                        onValueChanged: {
+                            Config.options.search.fileExcludePaths = value.split(",").map(s => s.trim()).filter(s => s.length > 0);
+                        }
+                    }
+                }
+            }
+            ContentSubsection {
                 title: Translation.tr("Web search")
 
                 GroupedList {

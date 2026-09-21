@@ -694,7 +694,10 @@ Singleton {
             property JsonObject search: JsonObject {
                 property int nonAppResultDelay: 30 // This prevents lagging when typing
                 property int fileResultDelay: 120 // Debounce for the "fd" file/folder search process (heavier than a math eval, so a longer delay avoids spawning a process on every keystroke)
+                property int fileSearchTimeout: 2500 // ms - how long fd is allowed to keep running (per search) before being cut off; raise this if results from a slow/secondary drive still don't show up in time
+                property bool showFileSearchPath: true // Show the full path under the file name in file search results
                 property list<string> fileSearchPaths: [] // Roots passed to fd. Empty = search the user's home directory only. Add absolute paths (e.g. ["/", "/mnt/data"]) to widen the search
+                property list<string> fileExcludePaths: [] // Always excluded from file search results if the path contains any of these (e.g. ["node_modules", "/mnt/backup"]), on top of any exclude: keyword typed in the search itself
                 property string engineBaseUrl: "https://www.google.com/search?q="
                 property list<string> excludedSites: ["quora.com", "facebook.com"]
                 property bool sloppy: false // Uses levenshtein distance based scoring instead of fuzzy sort. Very weird.
