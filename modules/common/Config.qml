@@ -43,6 +43,59 @@ Singleton {
         obj[keys[keys.length - 1]] = convertedValue;
     }
 
+    // Per-screen bar config resolution.
+    // path is a flat dot-path matching Config.options.bar's nesting, e.g. "workspaces.monochromeIcons".
+    // screenName should come from Window.window?.screen?.name in the calling component;
+    // falsy/unknown screens (or screens with no override for that path) just fall back
+    // to the global Config.options.bar.<path> default.
+    function barOption(screenName, path) {
+        if (screenName) {
+            const entry = root.options.bar.perScreenOverrides.find(e => e.screen === screenName);
+            if (entry && entry.overrides && Object.prototype.hasOwnProperty.call(entry.overrides, path)) {
+                return entry.overrides[path];
+            }
+        }
+        const keys = path.split(".");
+        let obj = root.options.bar;
+        for (const k of keys) {
+            if (obj === undefined || obj === null) return undefined;
+            obj = obj[k];
+        }
+        return obj;
+    }
+
+    // Sets a per-screen override. Pass value === undefined to clear the override
+    // for that screen/path (reverting it back to the global default).
+    function setBarOption(screenName, path, value) {
+        if (!screenName) return;
+        let list = root.options.bar.perScreenOverrides.slice();
+        let idx = list.findIndex(e => e.screen === screenName);
+        if (idx === -1) {
+            if (value === undefined) return;
+            list.push({ screen: screenName, overrides: { [path]: value } });
+        } else {
+            let entry = { screen: list[idx].screen, overrides: Object.assign({}, list[idx].overrides) };
+            if (value === undefined) {
+                delete entry.overrides[path];
+            } else {
+                entry.overrides[path] = value;
+            }
+            if (Object.keys(entry.overrides).length === 0) {
+                list.splice(idx, 1);
+            } else {
+                list[idx] = entry;
+            }
+        }
+        root.options.bar.perScreenOverrides = list;
+    }
+
+    // True if this screen has any customized bar setting at all.
+    function screenHasBarOverrides(screenName) {
+        if (!screenName) return false;
+        const entry = root.options.bar.perScreenOverrides.find(e => e.screen === screenName);
+        return !!(entry && entry.overrides && Object.keys(entry.overrides).length > 0);
+    }
+
     Timer {
         id: fileReloadTimer
         interval: root.readWriteDelay
@@ -509,6 +562,14 @@ Singleton {
                     property int maxWidth: 280
                     property int minWidth: 100
                 }
+
+                // Per-screen overrides for everything above. Each entry looks like
+                // { screen: "eDP-1", overrides: { "workspaces.monochromeIcons": false, "vertical": true } }
+                // - flat dot-paths matching the property nesting above, only for the
+                // values that differ from the global defaults on that screen. Read/write
+                // this through Config.barOption()/Config.setBarOption() below, never directly -
+                // see BarConfig.qml's screen selector for the settings-UI side of this.
+                property list<var> perScreenOverrides: []
             }
 
             property JsonObject battery: JsonObject {

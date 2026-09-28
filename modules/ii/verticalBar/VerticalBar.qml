@@ -13,15 +13,16 @@ import qs.modules.common.functions
 
 Scope {
     id: bar
-    property bool showBarBackground: Config.options.bar.showBackground
 
     Variants {
         model: {
             const screens = Quickshell.screens;
+            // Evaluated before any per-screen window exists, so this is always the
+            // global default - "which screens show a bar" isn't itself per-screen.
             const list = Config.options.bar.screenList;
-            if (!list || list.length === 0)
-                return screens;
-            return screens.filter(screen => list.includes(screen.name));
+            const base = (!list || list.length === 0) ? screens : screens.filter(screen => list.includes(screen.name));
+            // Each screen's own orientation setting decides which of Bar/VerticalBar it gets
+            return base.filter(screen => !!Config.barOption(screen.name, "vertical"));
         }
         LazyLoader {
             id: barLoader
@@ -30,19 +31,21 @@ Scope {
             component: PanelWindow {
                 id: barRoot
                 screen: barLoader.modelData
+                readonly property string __barScreen: barRoot.screen?.name ?? ""
+                property bool showBarBackground: Config.barOption(barRoot.__barScreen, "showBackground")
 
                 property var brightnessMonitor: Brightness.getMonitorForScreen(barLoader.modelData)
                 
                 Timer {
                     id: showBarTimer
-                    interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
+                    interval: (Config.barOption(barRoot.__barScreen, "autoHide.showWhenPressingSuper.delay") ?? 100)
                     repeat: false
                     onTriggered: { barRoot.superShow = true }
                 }
                 Connections {
                     target: GlobalStates
                     function onSuperDownChanged() {
-                        if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable) return;
+                        if (!Config.barOption(barRoot.__barScreen, "autoHide.showWhenPressingSuper.enable")) return;
                         if (GlobalStates.superDown) showBarTimer.restart();
                         else { showBarTimer.stop(); barRoot.superShow = false; }
                     }
@@ -50,14 +53,14 @@ Scope {
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
                 exclusionMode: ExclusionMode.Ignore
-                property int normalExclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows))
+                property int normalExclusiveZone: (Config.barOption(barRoot.__barScreen, "autoHide.enable") && (!mustShow || !Config.barOption(barRoot.__barScreen, "autoHide.pushWindows")))
                     ? 0
                     : Appearance.sizes.baseVerticalBarWidth
-                        + (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0)
-                        + (Config.options.bar.cornerStyle === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
+                        + (Config.barOption(barRoot.__barScreen, "cornerStyle") === 1 ? Appearance.sizes.hyprlandGapsOut : 0)
+                        + (Config.barOption(barRoot.__barScreen, "cornerStyle") === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
 
-                exclusiveZone: (barContent.centerOnly && Config.options.bar.centerOnlyReserveFrame)
-                    ? Config.options.bar.frameThickness
+                exclusiveZone: (barContent.centerOnly && Config.barOption(barRoot.__barScreen, "centerOnlyReserveFrame"))
+                    ? Config.barOption(barRoot.__barScreen, "frameThickness")
                     : normalExclusiveZone
                 WlrLayershell.namespace: "quickshell:verticalBar"
                 implicitWidth: Appearance.sizes.verticalBarWidth + Appearance.rounding.screenRounding
@@ -65,8 +68,8 @@ Scope {
                 color: "transparent"
 
                 anchors {
-                    left: !Config.options.bar.bottom
-                    right: Config.options.bar.bottom
+                    left: !Config.barOption(barRoot.__barScreen, "bottom")
+                    right: Config.barOption(barRoot.__barScreen, "bottom")
                     top: true
                     bottom: true
                 }
@@ -83,24 +86,24 @@ Scope {
                         id: hoverMaskRegion
                         anchors {
                             fill: barContent
-                            leftMargin: -Config.options.bar.autoHide.hoverRegionWidth
-                            rightMargin: -Config.options.bar.autoHide.hoverRegionWidth
+                            leftMargin: -Config.barOption(barRoot.__barScreen, "autoHide.hoverRegionWidth")
+                            rightMargin: -Config.barOption(barRoot.__barScreen, "autoHide.hoverRegionWidth")
                         }
                     }
 
                     RoundCorner {
                         id: topPillCorner
-                        visible: barContent.centerOnly && showBarBackground && Config.options.bar.cornerStyle === 0
+                        visible: barContent.centerOnly && showBarBackground && Config.barOption(barRoot.__barScreen, "cornerStyle") === 0
                         y: barContent.centerPillY - implicitSize
                         implicitSize: Appearance.rounding.screenRounding
-                        color: Config.options.bar.followFrameColor
-                            ? Appearance.getColorFromName(Config.options.bar.frameColor)
+                        color: Config.barOption(barRoot.__barScreen, "followFrameColor")
+                            ? Appearance.getColorFromName(Config.barOption(barRoot.__barScreen, "frameColor"))
                             : Appearance.colors.colLayer0
                         corner: RoundCorner.CornerEnum.BottomLeft
 
                         states: State {
                             name: "right"
-                            when: Config.options.bar.bottom
+                            when: Config.barOption(barRoot.__barScreen, "bottom")
                             AnchorChanges {
                                 target: topPillCorner
                                 anchors.left: undefined
@@ -120,17 +123,17 @@ Scope {
 
                     RoundCorner {
                         id: bottomPillCorner
-                        visible: barContent.centerOnly && showBarBackground && Config.options.bar.cornerStyle === 0
+                        visible: barContent.centerOnly && showBarBackground && Config.barOption(barRoot.__barScreen, "cornerStyle") === 0
                         y: barContent.centerPillY + barContent.centerPillHeight
                         implicitSize: Appearance.rounding.screenRounding
-                        color: Config.options.bar.followFrameColor
-                            ? Appearance.getColorFromName(Config.options.bar.frameColor)
+                        color: Config.barOption(barRoot.__barScreen, "followFrameColor")
+                            ? Appearance.getColorFromName(Config.barOption(barRoot.__barScreen, "frameColor"))
                             : Appearance.colors.colLayer0
                         corner: RoundCorner.CornerEnum.TopLeft
 
                         states: State {
                             name: "right"
-                            when: Config.options.bar.bottom
+                            when: Config.barOption(barRoot.__barScreen, "bottom")
                             AnchorChanges {
                                 target: bottomPillCorner
                                 anchors.left: undefined
@@ -150,6 +153,7 @@ Scope {
 
                     VerticalBarContent {
                         id: barContent
+                        screenName: barRoot.__barScreen
 
                         implicitWidth: Appearance.sizes.verticalBarWidth
                         anchors {
@@ -157,9 +161,9 @@ Scope {
                             bottom: parent.bottom
                             left: parent.left
                             right: undefined
-                            leftMargin: (Config?.options.bar.autoHide.enable && !mustShow) 
+                            leftMargin: (Config.barOption(barRoot.__barScreen, "autoHide.enable") && !mustShow) 
                                 ? -Appearance.sizes.verticalBarWidth 
-                                : (Config.options.bar.cornerStyle === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
+                                : (Config.barOption(barRoot.__barScreen, "cornerStyle") === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
                         }
                         Behavior on anchors.leftMargin {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
@@ -170,7 +174,7 @@ Scope {
 
                         states: State {
                             name: "right"
-                            when: Config.options.bar.bottom
+                            when: Config.barOption(barRoot.__barScreen, "bottom")
                             AnchorChanges {
                                 target: barContent
                                 anchors {
@@ -183,9 +187,9 @@ Scope {
                             PropertyChanges {
                                 target: barContent
                                 anchors.topMargin: 0
-                                anchors.rightMargin: (Config?.options.bar.autoHide.enable && !mustShow)
+                                anchors.rightMargin: (Config.barOption(barRoot.__barScreen, "autoHide.enable") && !mustShow)
                                     ? -Appearance.sizes.barHeight
-                                    : (Config.options.bar.cornerStyle === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
+                                    : (Config.barOption(barRoot.__barScreen, "cornerStyle") === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
                             }
                         }
                     }
@@ -200,11 +204,11 @@ Scope {
                             right: undefined
                         }
                         width: Appearance.rounding.screenRounding
-                        active: showBarBackground && Config.options.bar.cornerStyle === 0 && !barContent.centerOnly
+                        active: showBarBackground && Config.barOption(barRoot.__barScreen, "cornerStyle") === 0 && !barContent.centerOnly
 
                         states: State {
                             name: "right"
-                            when: Config.options.bar.bottom
+                            when: Config.barOption(barRoot.__barScreen, "bottom")
                             AnchorChanges {
                                 target: roundDecorators
                                 anchors {
@@ -223,14 +227,14 @@ Scope {
                                 anchors { left: parent.left; right: parent.right; top: parent.top }
                                 implicitSize: Appearance.rounding.screenRounding
                                 color: showBarBackground
-                                    ? (Config.options.bar.followFrameColor && Config.options.bar.frameColor
-                                        ? Appearance.getColorFromName(Config.options.bar.frameColor)
+                                    ? (Config.barOption(barRoot.__barScreen, "followFrameColor") && Config.barOption(barRoot.__barScreen, "frameColor")
+                                        ? Appearance.getColorFromName(Config.barOption(barRoot.__barScreen, "frameColor"))
                                         : Appearance.colors.colLayer0)
                                     : "transparent"
                                 corner: RoundCorner.CornerEnum.TopLeft
                                 states: State {
                                     name: "bottom"
-                                    when: Config.options.bar.bottom
+                                    when: Config.barOption(barRoot.__barScreen, "bottom")
                                     PropertyChanges { topCorner.corner: RoundCorner.CornerEnum.TopRight }
                                 }
                             }
@@ -238,19 +242,19 @@ Scope {
                                 id: bottomCorner
                                 anchors {
                                     bottom: parent.bottom
-                                    left: !Config.options.bar.bottom ? parent.left : undefined
-                                    right: Config.options.bar.bottom ? parent.right : undefined
+                                    left: !Config.barOption(barRoot.__barScreen, "bottom") ? parent.left : undefined
+                                    right: Config.barOption(barRoot.__barScreen, "bottom") ? parent.right : undefined
                                 }
                                 implicitSize: Appearance.rounding.screenRounding
                                 color: showBarBackground
-                                    ? (Config.options.bar.followFrameColor && Config.options.bar.frameColor
-                                        ? Appearance.getColorFromName(Config.options.bar.frameColor)
+                                    ? (Config.barOption(barRoot.__barScreen, "followFrameColor") && Config.barOption(barRoot.__barScreen, "frameColor")
+                                        ? Appearance.getColorFromName(Config.barOption(barRoot.__barScreen, "frameColor"))
                                         : Appearance.colors.colLayer0)
                                     : "transparent"
                                 corner: RoundCorner.CornerEnum.BottomLeft
                                 states: State {
                                     name: "bottom"
-                                    when: Config.options.bar.bottom
+                                    when: Config.barOption(barRoot.__barScreen, "bottom")
                                     PropertyChanges { bottomCorner.corner: RoundCorner.CornerEnum.BottomRight }
                                 }
                             }
