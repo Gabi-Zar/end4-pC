@@ -118,7 +118,6 @@ PanelWindow {
     property bool isCircleSelection: (root.selectionMode === RegionSelection.SelectionMode.Circle)
     property bool enableWindowRegions: Config.options.regionSelector.targetRegions.windows && !isCircleSelection
     property bool enableLayerRegions: Config.options.regionSelector.targetRegions.layers && !isCircleSelection
-    property bool enableContentRegions: Config.options.regionSelector.targetRegions.content
 
     // Target
     property real targetedRegionX: -1
@@ -192,7 +191,6 @@ PanelWindow {
         screenshotDir: root.screenshotDir
         screenshotPath: root.screenshotPath
         onExited: (exitCode, exitStatus) => {
-            if (root.enableContentRegions) imageDetectionProcess.running = true;
             root.preparationDone = !checkRecordingProc.running;
         }
     }
@@ -223,24 +221,6 @@ PanelWindow {
         function onEnableChanged() {
             if (!Persistent.states.record.enable && root.isRecording) {
                 root.dismiss();
-            }
-        }
-    }
-
-    Process {
-        id: imageDetectionProcess
-        command: ["bash", "-c", `${Directories.scriptPath}/images/find-regions-venv.sh ` 
-            + `--hyprctl ` 
-            + `--image '${StringUtils.shellSingleQuoteEscape(root.screenshotPath)}' ` 
-            + `--max-width ${Math.round(root.screen.width * root.falsePositivePreventionRatio)} ` 
-            + `--max-height ${Math.round(root.screen.height * root.falsePositivePreventionRatio)} `]
-        stdout: StdioCollector {
-            id: imageDimensionCollector
-            onStreamFinished: {
-                imageRegions = RegionFunctions.filterImageRegions(
-                    JSON.parse(imageDimensionCollector.text),
-                    root.windowRegions
-                );
             }
         }
     }
@@ -470,34 +450,6 @@ PanelWindow {
                 fillColor: targeted ? root.windowFillColor : "transparent"
                 text: `${modelData.namespace}`
                 radius: Appearance.rounding.windowRounding
-            }
-        }
-
-        // Content regions
-        Repeater {
-            model: ScriptModel {
-                values: {
-                    if (root.phase === RegionSelection.Phase.Select && root.enableContentRegions) {
-                        return root.imageRegions
-                    } else {
-                        return []
-                    }
-                }
-            }
-            delegate: TargetRegion {
-                z: 4
-                required property var modelData
-                clientDimensions: modelData
-                targeted: !root.draggedAway &&
-                    (root.targetedRegionX === modelData.at[0] 
-                    && root.targetedRegionY === modelData.at[1]
-                    && root.targetedRegionWidth === modelData.size[0]
-                    && root.targetedRegionHeight === modelData.size[1])
-
-                opacity: root.draggedAway ? 0 : root.contentRegionOpacity
-                borderColor: root.imageBorderColor
-                fillColor: targeted ? root.imageFillColor : "transparent"
-                text: Translation.tr("Content region")
             }
         }
 

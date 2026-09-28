@@ -956,14 +956,6 @@ ContentPage {
                             Config.options.regionSelector.targetRegions.layers = checked;
                         }
                     }
-                    ConfigSwitch {
-                        buttonIcon: "nearby"
-                        text: Translation.tr('Content')
-                        checked: Config.options.regionSelector.targetRegions.content
-                        onCheckedChanged: {
-                            Config.options.regionSelector.targetRegions.content = checked;
-                        }
-                    }
                 }
             }
 
