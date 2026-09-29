@@ -89,6 +89,11 @@ Scope {
                 (Config.options.bar.dynamicIsland.visualizerStyle === "wave" ||
                 (Config.options.bar.dynamicIsland.visualizerStyle === "dots" && !Config.options.bar.dynamicIsland.showMediaControls))) ||
             Config.options.bar.layouts.rightLayout.includes("visualizer") ||
+            Config.options.bar.perScreenOverrides.some(screen =>
+                screen.overrides.layouts.leftLayout.includes("visualizer") ||
+                screen.overrides.layouts.middleLayout.includes("visualizer") ||
+                screen.overrides.layouts.rightLayout.includes("visualizer")
+            ) ||
             Config.options.background.widgets.visualizer.enable)
             && (MprisController.activePlayer?.isPlaying ?? false)
         onRunningChanged: {
