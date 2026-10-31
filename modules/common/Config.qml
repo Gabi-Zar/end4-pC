@@ -43,6 +43,59 @@ Singleton {
         obj[keys[keys.length - 1]] = convertedValue;
     }
 
+    // Per-screen bar config resolution.
+    // path is a flat dot-path matching Config.options.bar's nesting, e.g. "workspaces.monochromeIcons".
+    // screenName should come from Window.window?.screen?.name in the calling component;
+    // falsy/unknown screens (or screens with no override for that path) just fall back
+    // to the global Config.options.bar.<path> default.
+    function barOption(screenName, path) {
+        if (screenName) {
+            const entry = root.options.bar.perScreenOverrides.find(e => e.screen === screenName);
+            if (entry && entry.overrides && Object.prototype.hasOwnProperty.call(entry.overrides, path)) {
+                return entry.overrides[path];
+            }
+        }
+        const keys = path.split(".");
+        let obj = root.options.bar;
+        for (const k of keys) {
+            if (obj === undefined || obj === null) return undefined;
+            obj = obj[k];
+        }
+        return obj;
+    }
+
+    // Sets a per-screen override. Pass value === undefined to clear the override
+    // for that screen/path (reverting it back to the global default).
+    function setBarOption(screenName, path, value) {
+        if (!screenName) return;
+        let list = root.options.bar.perScreenOverrides.slice();
+        let idx = list.findIndex(e => e.screen === screenName);
+        if (idx === -1) {
+            if (value === undefined) return;
+            list.push({ screen: screenName, overrides: { [path]: value } });
+        } else {
+            let entry = { screen: list[idx].screen, overrides: Object.assign({}, list[idx].overrides) };
+            if (value === undefined) {
+                delete entry.overrides[path];
+            } else {
+                entry.overrides[path] = value;
+            }
+            if (Object.keys(entry.overrides).length === 0) {
+                list.splice(idx, 1);
+            } else {
+                list[idx] = entry;
+            }
+        }
+        root.options.bar.perScreenOverrides = list;
+    }
+
+    // True if this screen has any customized bar setting at all.
+    function screenHasBarOverrides(screenName) {
+        if (!screenName) return false;
+        const entry = root.options.bar.perScreenOverrides.find(e => e.screen === screenName);
+        return !!(entry && entry.overrides && Object.keys(entry.overrides).length > 0);
+    }
+
     Timer {
         id: fileReloadTimer
         interval: root.readWriteDelay
@@ -239,6 +292,7 @@ Singleton {
             property JsonObject apps: JsonObject {
                 property string bluetooth: "kcmshell6 kcm_bluetooth"
                 property string changePassword: "kitty -1 --hold=yes fish -i -c 'passwd'"
+                property string fileManager: "" // e.g. "dolphin". Used by the "!" file search to open folders / reveal a file's location. Empty = let xdg-open pick, which needs inode/directory correctly associated in your xdg-mime config
                 property string network: "kcmshell6 kcm_networkmanagement"
                 property string manageUser: "kcmshell6 kcm_users"
                 property string networkEthernet: "kcmshell6 kcm_networkmanagement"
@@ -257,7 +311,7 @@ Singleton {
             }
 
             property JsonObject background: JsonObject {
-                property string lockWall: ""
+                property string lockWall: "" // Used by Lock.qml to lock the color scheme to a specific image on lock, independent of the (externally managed) wallpaper
                 property bool widgetsLocked: false
                 property JsonObject collage: JsonObject {
                     property bool enable: false
@@ -269,10 +323,6 @@ Singleton {
                     property string tree: "{\"t\":\"leaf\",\"id\":1,\"img\":\"\"}"
                 }
                 property bool showGrid: true
-                property bool showBlur: false
-                property real blurRadius: 32
-                property string splitRatio: "100" // 25 50 100
-                property string splitSide: "left"
                 property bool showSnapLines: true
                 property JsonObject widgets: JsonObject {
                     property bool blurWidgets: false
@@ -495,30 +545,8 @@ Singleton {
                         property bool shadow: true
                     }
                 }
-                property JsonObject liveWallpaper: JsonObject {
-                    property bool pauseOnBattery: false // Pause as soon as the charger is out
-                    property real pauseBelowPercent: 0 // Or only under this charge, 0 to ignore
-                }
-                property list<string> screenList: [] 
-                property string wallpaperPath: ""
-                property bool centeredWallpaper: false
-                property string centeredWallpaperShape: "Cookie7Sided"
-                property int centeredWallpaperSize: 400
-                property string centeredWallpaperColor: "primaryContainer"
-                property bool centeredWallpaperOnlyWhenLocked: false
-                property string centeredWallpaperImage: ""
-                property string wallpaperAnimation: "magic"
-                property bool enableWallpaperPreview: false
-                property string thumbnailPath: ""
+                property list<string> screenList: []
                 property bool hideWhenFullscreen: true
-                property JsonObject parallax: JsonObject {
-                    property bool vertical: false
-                    property bool autoVertical: false
-                    property bool enableWorkspace: true
-                    property real workspaceZoom: 1.0 // Relative to wallpaper size
-                    property bool enableSidebar: true
-                    property real widgetsFactor: 1.2
-                }
             }
 
             property JsonObject bar: JsonObject {
@@ -594,7 +622,6 @@ Singleton {
                     property bool showColorPicker: true
                     property bool showMicToggle: false
                     property bool showKeyboardToggle: false
-                    property bool showWallpaperToggle: true
                     property bool showDarkModeToggle: false
                     property bool showPerformanceProfileToggle: false
                     property bool showScreenRecord: false       
@@ -637,6 +664,14 @@ Singleton {
                     property int minWidth: 100
                     property bool showLyrics: false
                 }
+
+                // Per-screen overrides for everything above. Each entry looks like
+                // { screen: "eDP-1", overrides: { "workspaces.monochromeIcons": false, "vertical": true } }
+                // - flat dot-paths matching the property nesting above, only for the
+                // values that differ from the global defaults on that screen. Read/write
+                // this through Config.barOption()/Config.setBarOption() below, never directly -
+                // see BarConfig.qml's screen selector for the settings-UI side of this.
+                property list<var> perScreenOverrides: []
             }
 
             property JsonObject battery: JsonObject {
@@ -816,7 +851,6 @@ Singleton {
                 property JsonObject targetRegions: JsonObject {
                     property bool windows: true
                     property bool layers: false
-                    property bool content: true
                     property bool showLabel: false
                     property real opacity: 0.3
                     property real contentRegionOpacity: 0.8
@@ -854,6 +888,11 @@ Singleton {
 
             property JsonObject search: JsonObject {
                 property int nonAppResultDelay: 30 // This prevents lagging when typing
+                property int fileResultDelay: 120 // Debounce for the "fd" file/folder search process (heavier than a math eval, so a longer delay avoids spawning a process on every keystroke)
+                property int fileSearchTimeout: 2500 // ms - how long fd is allowed to keep running (per search) before being cut off; raise this if results from a slow/secondary drive still don't show up in time
+                property bool showFileSearchPath: true // Show the full path under the file name in file search results
+                property list<string> fileSearchPaths: [] // Roots passed to fd. Empty = search the user's home directory only. Add absolute paths (e.g. ["/", "/mnt/data"]) to widen the search
+                property list<string> fileExcludePaths: [] // Always excluded from file search results if the path contains any of these (e.g. ["node_modules", "/mnt/backup"]), on top of any exclude: keyword typed in the search itself
                 property string engineBaseUrl: "https://www.google.com/search?q="
                 property list<string> excludedSites: ["quora.com", "facebook.com"]
                 property list<var> clipboardPins: []
@@ -870,6 +909,7 @@ Singleton {
                     property string math: "="
                     property string shellCommand: "$"
                     property string webSearch: "?"
+                    property string file: "!"
                 }
                 property JsonObject imageSearch: JsonObject {
                     property string imageSearchEngineBaseUrl: "https://lens.google.com/uploadbyurl?url="
@@ -963,7 +1003,7 @@ Singleton {
             }
 
             property JsonObject custom: JsonObject {
-                property string distroIcon: "google-gemini-symbolic"
+                property string distroIcon: "spark"
                 property bool colorizeIcon: true
                 property string iconColor: "onLayer0"
                 property string iconsPath: ""
@@ -1008,28 +1048,6 @@ Singleton {
                 property int stronglyAdviseUpdateThreshold: 200 // packages
             }
             
-            property JsonObject wallpaperSelector: JsonObject {
-                property bool useSystemFileDialog: false
-                property bool showBlurBackground: false
-                property bool showHomePath: true
-                property string userPath: "" // This can be set to any path and it will show up as a quick access in the wallpaper selector"
-                property string liveWallpapersPath: ""
-                property bool showSearchbar: true
-                property int columns: 4
-                property bool closeAfterSelection: true
-                property int changeInterval: 0 
-                property string sortMode: "time"
-                property string wallhavenApiKey: "" // fallback; keyring ("/wallhaven <key>") takes precedence
-                property string wallhavenCategories: "111"
-                property string wallhavenPurity: "100"
-                property string wallhavenSorting: "relevance"
-                property string wallhavenOrder: "desc"
-                property string wallhavenRatios: ""
-                property string wallhavenColors: ""
-                property string wallhavenQuery: ""
-                property string wallhavenTopRange: "1y"
-            }
-
             property JsonObject windows: JsonObject {
                 property bool showTitlebar: true // Client-side decoration for shell apps
                 property bool centerTitle: true
@@ -1041,12 +1059,10 @@ Singleton {
 
             property JsonObject workSafety: JsonObject {
                 property JsonObject enable: JsonObject {
-                    property bool wallpaper: false
                     property bool clipboard: false
                 }
                 property JsonObject triggerCondition: JsonObject {
                     property list<string> networkNameKeywords: ["airport", "cafe", "college", "company", "eduroam", "free", "guest", "public", "school", "university"]
-                    property list<string> fileKeywords: ["anime", "booru", "ecchi", "hentai", "yande.re", "konachan", "breast", "nipples", "pussy", "nsfw", "spoiler", "girl"]
                     property list<string> linkKeywords: ["hentai", "porn", "sukebei", "hitomi.la", "rule34", "gelbooru", "fanbox", "dlsite"]
                 }
             }

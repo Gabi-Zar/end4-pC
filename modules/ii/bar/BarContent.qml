@@ -11,28 +11,30 @@ import qs.modules.common.functions
 
 Item {
     id: root
+    property string screenName: ""
+    readonly property string __barScreen: root.screenName
     implicitHeight: Appearance.sizes.barHeight
     width: parent.width
     readonly property real barPadding: 0
-    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
-    readonly property bool isMaterialHug: Config.options.bar.cornerStyle === 4
-    readonly property bool isSplitHug: Config.options.bar.cornerStyle === 6
+    readonly property bool isMaterial: Config.barOption(root.__barScreen, "cornerStyle") === 3 || Config.barOption(root.__barScreen, "cornerStyle") === 4
+    readonly property bool isMaterialHug: Config.barOption(root.__barScreen, "cornerStyle") === 4
+    readonly property bool isSplitHug: Config.barOption(root.__barScreen, "cornerStyle") === 6
     readonly property bool hasTabs: root.isMaterialHug || root.isSplitHug
     readonly property bool useTabWrapper: root.isMaterial || root.isSplitHug
     readonly property bool glassTabs: root.hasTabs && Config.options.background.widgets.glass.enable
     readonly property real tabFlare: root.glassTabs ? Appearance.rounding.screenRounding : 0
-    readonly property bool glassHug: Config.options.bar.cornerStyle === 0 && Config.options.background.widgets.glass.enable && Config.options.bar.showBackground
+    readonly property bool glassHug: Config.barOption(root.__barScreen, "cornerStyle") === 0 && Config.options.background.widgets.glass.enable && Config.barOption(root.__barScreen, "showBackground")
     readonly property real hugFlare: root.glassHug && !root.centerOnly ? Appearance.rounding.screenRounding : 0
     readonly property real pillFlare: root.glassHug && root.centerOnly ? Appearance.rounding.screenRounding : 0
-    readonly property real splitGroupSpacing: Config.options.bar.borderless === "transparent" ? -7 : Config.options.bar.borderless === "segmented" ? -1 : 2
-    readonly property color materialPillBgColor: (Config.options.bar.followFrameColor && Config.options.bar.frameColor)
-        ? Appearance.getColorFromName(Config.options.bar.frameColor)
+    readonly property real splitGroupSpacing: Config.barOption(root.__barScreen, "borderless") === "transparent" ? -7 : Config.barOption(root.__barScreen, "borderless") === "segmented" ? -1 : 2
+    readonly property color materialPillBgColor: (Config.barOption(root.__barScreen, "followFrameColor") && Config.barOption(root.__barScreen, "frameColor"))
+        ? Appearance.getColorFromName(Config.barOption(root.__barScreen, "frameColor"))
         : Appearance.colors.colUiBackground
     readonly property real centerPillX: centerPill.x
     readonly property real centerPillWidth: centerPill.width
-    readonly property bool isPanel: Config.options.bar.cornerStyle === 5
-    readonly property var diLeftWidgets:  filterLayout(Config.options.bar.dynamicIsland.leftWidgets ?? [])
-    readonly property var diRightWidgets: filterLayout(Config.options.bar.dynamicIsland.rightWidgets ?? [])
+    readonly property bool isPanel: Config.barOption(root.__barScreen, "cornerStyle") === 5
+    readonly property var diLeftWidgets:  filterLayout(Config.barOption(root.__barScreen, "dynamicIsland.leftWidgets") ?? [])
+    readonly property var diRightWidgets: filterLayout(Config.barOption(root.__barScreen, "dynamicIsland.rightWidgets") ?? [])
 
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
 
@@ -41,9 +43,9 @@ Item {
         return layout.filter(name => name !== "sysTray")
     }
 
-    readonly property var effectiveLeftLayout:   filterLayout(Config.options.bar.layouts.leftLayout)
-    readonly property var effectiveMiddleLayout: filterLayout(Config.options.bar.layouts.middleLayout)
-    readonly property var effectiveRightLayout:  filterLayout(Config.options.bar.layouts.rightLayout)
+    readonly property var effectiveLeftLayout:   filterLayout(Config.barOption(root.__barScreen, "layouts.leftLayout"))
+    readonly property var effectiveMiddleLayout: filterLayout(Config.barOption(root.__barScreen, "layouts.middleLayout"))
+    readonly property var effectiveRightLayout:  filterLayout(Config.barOption(root.__barScreen, "layouts.rightLayout"))
 
     function getWidgetUrl(name) {
         if (!name) return "";
@@ -87,25 +89,25 @@ Item {
     Rectangle {
         id: barBackground
         anchors.fill: parent
-        anchors.margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
-        property color fill: (!centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.useTabWrapper)
-            ? (Config.options.bar.followFrameColor
-                ? Appearance.getColorFromName(Config.options.bar.frameColor)
+        anchors.margins: Config.barOption(root.__barScreen, "cornerStyle") === 1 ? Appearance.sizes.hyprlandGapsOut : 0
+        property color fill: (!centerOnly && Config.barOption(root.__barScreen, "showBackground") && Config.barOption(root.__barScreen, "cornerStyle") !== 2 && !root.useTabWrapper)
+            ? (Config.barOption(root.__barScreen, "followFrameColor")
+                ? Appearance.getColorFromName(Config.barOption(root.__barScreen, "frameColor"))
                 : Appearance.colors.colUiBackground)
             : "transparent"
         color: Config.options.background.widgets.glass.enable && fill.a > 0 ? "transparent" : fill
-        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: (!centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
-        border.color: Config.options.bar.cornerStyle === 1 && !Config.options.bar.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8) 
+        radius: Config.barOption(root.__barScreen, "cornerStyle") === 1 ? Appearance.rounding.windowRounding : 0
+        border.width: (!centerOnly && Config.barOption(root.__barScreen, "cornerStyle") === 1) ? 1 : 0
+        border.color: Config.barOption(root.__barScreen, "cornerStyle") === 1 && !Config.barOption(root.__barScreen, "showBackground") ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8) 
     }
 
     WindowGlass {
         anchors.fill: barBackground
-        anchors.topMargin: Config.options.bar.bottom ? -root.hugFlare : 0
-        anchors.bottomMargin: Config.options.bar.bottom ? 0 : -root.hugFlare
+        anchors.topMargin: Config.barOption(root.__barScreen, "bottom") ? -root.hugFlare : 0
+        anchors.bottomMargin: Config.barOption(root.__barScreen, "bottom") ? 0 : -root.hugFlare
         hangLeft: root.hugFlare
         hangRight: root.hugFlare
-        edge: Config.options.bar.bottom ? 1 : 0
+        edge: Config.barOption(root.__barScreen, "bottom") ? 1 : 0
         glassEnabled: barBackground.fill.a > 0
         cardRadius: barBackground.radius
         tint: barBackground.fill
@@ -125,17 +127,17 @@ Item {
     RoundCorner {
         id: leftPillCorner
         glass: true
-        visible: root.centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle === 0 && !root.glassHug
+        visible: root.centerOnly && Config.barOption(root.__barScreen, "showBackground") && Config.barOption(root.__barScreen, "cornerStyle") === 0 && !root.glassHug
         x: barContent.centerPillX - implicitSize
         implicitSize: Appearance.rounding.screenRounding
-        color: Config.options.bar.followFrameColor
-            ? Appearance.getColorFromName(Config.options.bar.frameColor)
+        color: Config.barOption(root.__barScreen, "followFrameColor")
+            ? Appearance.getColorFromName(Config.barOption(root.__barScreen, "frameColor"))
             : Appearance.colors.colUiBackground
         corner: RoundCorner.CornerEnum.TopRight
 
         states: State {
             name: "bottom"
-            when: Config.options.bar.bottom
+            when: Config.barOption(root.__barScreen, "bottom")
             AnchorChanges {
                 target: leftPillCorner
                 anchors.top: undefined
@@ -161,7 +163,7 @@ Item {
             anchors.rightMargin: -root.pillFlare
             flareLeft: root.pillFlare
             flareRight: root.pillFlare
-            edge: Config.options.bar.bottom ? 1 : 0
+            edge: Config.barOption(root.__barScreen, "bottom") ? 1 : 0
             glassEnabled: (parent?.fill.a ?? 0) > 0
             cardRadius: parent?.radius ?? 0
             topLeftRadius: parent && parent.topLeftRadius >= 0 ? parent.topLeftRadius : cardRadius
@@ -170,41 +172,41 @@ Item {
             bottomRightRadius: parent && parent.bottomRightRadius >= 0 ? parent.bottomRightRadius : cardRadius
             tint: parent?.fill ?? 'transparent'
         }
-        visible: centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 
+        visible: centerOnly && Config.barOption(root.__barScreen, "showBackground") && Config.barOption(root.__barScreen, "cornerStyle") !== 2 
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
         width: GlobalStates.dynamicIslandEnabled
-            ? (Config.options.bar.cornerStyle === 1 ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4)
+            ? (Config.barOption(root.__barScreen, "cornerStyle") === 1 ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4)
             : middleRow.implicitWidth + 10
-        height: GlobalStates.dynamicIslandEnabled ? parent.height : parent.height - (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
-        property color fill: root.useTabWrapper ? "transparent" : Config.options.bar.followFrameColor 
-            ? Appearance.getColorFromName(Config.options.bar.frameColor)
+        height: GlobalStates.dynamicIslandEnabled ? parent.height : parent.height - (Config.barOption(root.__barScreen, "cornerStyle") === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
+        property color fill: Config.barOption(root.__barScreen, "followFrameColor") 
+            ? Appearance.getColorFromName(Config.barOption(root.__barScreen, "frameColor"))
             : Appearance.colors.colUiBackground
         color: Config.options.background.widgets.glass.enable && fill.a > 0 ? "transparent" : fill
-        radius: Config.options.bar.cornerStyle === 1 || root.useTabWrapper ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+        radius: Config.barOption(root.__barScreen, "cornerStyle") === 1 || root.useTabWrapper ? Appearance.rounding.windowRounding : 0
+        border.width: Config.barOption(root.__barScreen, "cornerStyle") === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
-        bottomLeftRadius:  Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        topLeftRadius:     Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
-        topRightRadius:    Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
+        bottomLeftRadius:  Config.barOption(root.__barScreen, "cornerStyle") === 0 && !Config.barOption(root.__barScreen, "bottom") ? Appearance.rounding.screenRounding : radius
+        bottomRightRadius: Config.barOption(root.__barScreen, "cornerStyle") === 0 && !Config.barOption(root.__barScreen, "bottom") ? Appearance.rounding.screenRounding : radius
+        topLeftRadius:     Config.barOption(root.__barScreen, "cornerStyle") === 0 && Config.barOption(root.__barScreen, "bottom")  ? Appearance.rounding.screenRounding : radius
+        topRightRadius:    Config.barOption(root.__barScreen, "cornerStyle") === 0 && Config.barOption(root.__barScreen, "bottom")  ? Appearance.rounding.screenRounding : radius
     }
 
     RoundCorner {
         id: rightPillCorner
         glass: true
-        visible: root.centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle === 0 && !root.glassHug
+        visible: root.centerOnly && Config.barOption(root.__barScreen, "showBackground") && Config.barOption(root.__barScreen, "cornerStyle") === 0 && !root.glassHug
         x: barContent.centerPillX + barContent.centerPillWidth
         implicitSize: Appearance.rounding.screenRounding
-        color: Config.options.bar.followFrameColor
-            ? Appearance.getColorFromName(Config.options.bar.frameColor)
+        color: Config.barOption(root.__barScreen, "followFrameColor")
+            ? Appearance.getColorFromName(Config.barOption(root.__barScreen, "frameColor"))
             : Appearance.colors.colUiBackground
         corner: RoundCorner.CornerEnum.TopLeft
 
         states: State {
             name: "bottom"
-            when: Config.options.bar.bottom
+            when: Config.barOption(root.__barScreen, "bottom")
             AnchorChanges {
                 target: rightPillCorner
                 anchors.top: undefined
@@ -230,7 +232,7 @@ Item {
         // Left
         Item {
             anchors.left: parent.left
-            anchors.leftMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
+            anchors.leftMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Config.options.hyprland.general.gapsOut || 5) : (Config.barOption(root.__barScreen, "cornerStyle") === 1 ? 4 : Config.barOption(root.__barScreen, "cornerStyle") === 5 ? 4 : 8))
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.useTabWrapper ? (leftMaterialPill.width + (root.hasTabs && root.effectiveLeftLayout.length > 0 ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
@@ -241,11 +243,11 @@ Item {
                 WindowGlass {
                     anchors.fill: parent
                     anchors.rightMargin: -root.tabFlare
-                    anchors.topMargin: Config.options.bar.bottom ? -root.tabFlare : 0
-                    anchors.bottomMargin: Config.options.bar.bottom ? 0 : -root.tabFlare
+                    anchors.topMargin: Config.barOption(root.__barScreen, "bottom") ? -root.tabFlare : 0
+                    anchors.bottomMargin: Config.barOption(root.__barScreen, "bottom") ? 0 : -root.tabFlare
                     flareRight: root.tabFlare
                     hangLeft: root.tabFlare
-                    edge: Config.options.bar.bottom ? 1 : 0
+                    edge: Config.barOption(root.__barScreen, "bottom") ? 1 : 0
                     glassEnabled: (parent?.fill.a ?? 0) > 0
                     cardRadius: parent?.radius ?? 0
                     topLeftRadius: parent && parent.topLeftRadius >= 0 ? parent.topLeftRadius : cardRadius
@@ -256,8 +258,8 @@ Item {
                 }
                 visible: root.useTabWrapper && root.effectiveLeftLayout.length > 0
                 anchors.left: root.hasTabs ? parent.left : undefined
-                anchors.top: (root.hasTabs && !Config.options.bar.bottom) ? parent.top : undefined
-                anchors.bottom: (root.hasTabs && Config.options.bar.bottom) ? parent.bottom : undefined
+                anchors.top: (root.hasTabs && !Config.barOption(root.__barScreen, "bottom")) ? parent.top : undefined
+                anchors.bottom: (root.hasTabs && Config.barOption(root.__barScreen, "bottom")) ? parent.bottom : undefined
                 anchors.centerIn: root.hasTabs ? undefined : parent
                 width: leftMaterialRow.implicitWidth + (root.hasTabs ? 16 : 10)
                 height: root.hasTabs ? parent.height : leftMaterialRow.implicitHeight
@@ -267,8 +269,8 @@ Item {
 
                 topLeftRadius: root.hasTabs ? 0 : radius
                 bottomLeftRadius: root.hasTabs ? 0 : radius
-                topRightRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                bottomRightRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topRightRadius: (root.hasTabs && Config.barOption(root.__barScreen, "bottom")) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomRightRadius: (root.hasTabs && !Config.barOption(root.__barScreen, "bottom")) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 RowLayout {
                     id: leftMaterialRow
@@ -283,6 +285,7 @@ Item {
                     Component {
                         id: leftMaterialGroupDelegate
                         BarGroup {
+                            screenName: root.screenName
                             Layout.fillHeight: true
                             currentIndex: index
                             widgetName: modelData
@@ -295,6 +298,8 @@ Item {
                                 onLoaded: {
                                     if (item && item.hasOwnProperty("mirrored"))
                                         item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
+                                    if (item && item.hasOwnProperty("screenName"))
+                                        item.screenName = root.screenName
                                 }
                             }
                         }
@@ -307,11 +312,11 @@ Item {
                 glass: true
                 visible: root.hasTabs && !root.glassTabs && root.effectiveLeftLayout.length > 0
                 anchors.left: leftMaterialPill.right
-                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
-                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                anchors.top: !Config.barOption(root.__barScreen, "bottom") ? parent.top : undefined
+                anchors.bottom: Config.barOption(root.__barScreen, "bottom") ? parent.bottom : undefined
                 implicitSize: Appearance.rounding.screenRounding
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
+                corner: !Config.barOption(root.__barScreen, "bottom") ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
             }
 
             // Non-material layout
@@ -319,9 +324,9 @@ Item {
                 id: leftRow
                 visible: !root.useTabWrapper
                 anchors.fill: parent
-                spacing: Config.options.bar.borderless === "transparent" ? -7
-                    : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3
-                    : Config.options?.bar.borderless === "segmented" ? -1
+                spacing: Config.barOption(root.__barScreen, "borderless") === "transparent" ? -7
+                    : (Config.barOption(root.__barScreen, "borderless") === "segmented" && root.isPanel) ? 3
+                    : Config.barOption(root.__barScreen, "borderless") === "segmented" ? -1
                     : root.isPanel ? 4 : 2
 
                 Repeater {
@@ -332,6 +337,7 @@ Item {
                 Component {
                     id: leftBarGroupDelegate
                     BarGroup {
+                        screenName: root.screenName
                         Layout.fillHeight: true
                         currentIndex: index
                         widgetName: modelData
@@ -342,6 +348,8 @@ Item {
                             onLoaded: {
                                 if (item && item.hasOwnProperty("mirrored"))
                                     item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
+                                if (item && item.hasOwnProperty("screenName"))
+                                    item.screenName = root.screenName
                             }
                         }
                     }
@@ -351,12 +359,14 @@ Item {
                     id: leftNoGroupDelegate
                     Loader {
                         Layout.fillHeight: false
-                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
+                        Layout.topMargin: Config.barOption(root.__barScreen, "bottom") ? -5 : 3
                         Layout.alignment: Qt.AlignVCenter
                         source: root.getWidgetUrl(modelData)
                         onLoaded: {
                             if (item && item.hasOwnProperty("mirrored"))
                                 item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
+                            if (item && item.hasOwnProperty("screenName"))
+                                item.screenName = root.screenName
                         }
                     }
                 }
@@ -376,8 +386,8 @@ Item {
                 anchors.right: absoluteCenter.left
                 anchors.rightMargin: 8
                 anchors.verticalCenter: absoluteCenter.verticalCenter
-                active: Config.options.bar.dynamicIsland.leftWidget !== "none" && GlobalStates.dynamicIslandEnabled
-                source: active ? root.getWidgetUrl(Config.options.bar.dynamicIsland.leftWidget) : ""
+                active: Config.barOption(root.__barScreen, "dynamicIsland.leftWidget") !== "none" && GlobalStates.dynamicIslandEnabled
+                source: active ? root.getWidgetUrl(Config.barOption(root.__barScreen, "dynamicIsland.leftWidget")) : ""
             }
 
             // Dynamic Island — right
@@ -386,8 +396,8 @@ Item {
                 anchors.left: absoluteCenter.right
                 anchors.leftMargin: 8
                 anchors.verticalCenter: absoluteCenter.verticalCenter
-                active: Config.options.bar.dynamicIsland.rightWidget !== "none" && GlobalStates.dynamicIslandEnabled
-                source: active ? root.getWidgetUrl(Config.options.bar.dynamicIsland.rightWidget) : ""
+                active: Config.barOption(root.__barScreen, "dynamicIsland.rightWidget") !== "none" && GlobalStates.dynamicIslandEnabled
+                source: active ? root.getWidgetUrl(Config.barOption(root.__barScreen, "dynamicIsland.rightWidget")) : ""
             }
 
             RoundCorner {
@@ -395,11 +405,11 @@ Item {
                 glass: true
                 visible: root.hasTabs && !root.glassTabs && root.effectiveMiddleLayout.length > 0
                 anchors.right: centerMaterialPill.left
-                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
-                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                anchors.top: !Config.barOption(root.__barScreen, "bottom") ? parent.top : undefined
+                anchors.bottom: Config.barOption(root.__barScreen, "bottom") ? parent.bottom : undefined
                 implicitSize: Appearance.rounding.screenRounding
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
+                corner: !Config.barOption(root.__barScreen, "bottom") ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
             }
 
             // Material pill wrapper
@@ -411,7 +421,7 @@ Item {
                     anchors.rightMargin: -root.tabFlare
                     flareLeft: root.tabFlare
                     flareRight: root.tabFlare
-                    edge: Config.options.bar.bottom ? 1 : 0
+                    edge: Config.barOption(root.__barScreen, "bottom") ? 1 : 0
                     glassEnabled: (parent?.fill.a ?? 0) > 0
                     cardRadius: parent?.radius ?? 0
                     topLeftRadius: parent && parent.topLeftRadius >= 0 ? parent.topLeftRadius : cardRadius
@@ -428,10 +438,10 @@ Item {
                 property color fill: root.materialPillBgColor
                 color: Config.options.background.widgets.glass.enable && fill.a > 0 ? "transparent" : fill
 
-                topLeftRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                topRightRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                bottomLeftRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                bottomRightRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topLeftRadius: (root.hasTabs && Config.barOption(root.__barScreen, "bottom")) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topRightRadius: (root.hasTabs && Config.barOption(root.__barScreen, "bottom")) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomLeftRadius: (root.hasTabs && !Config.barOption(root.__barScreen, "bottom")) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomRightRadius: (root.hasTabs && !Config.barOption(root.__barScreen, "bottom")) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 RowLayout {
                     id: centerMaterialRow
@@ -446,6 +456,7 @@ Item {
                     Component {
                         id: middleMaterialGroupDelegate
                         BarGroup {
+                            screenName: root.screenName
                             Layout.fillHeight: true
                             currentIndex: index
                             widgetName: modelData
@@ -459,6 +470,8 @@ Item {
                                 onLoaded: {
                                     if (item && item.hasOwnProperty("mirrored"))
                                         item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
+                                    if (item && item.hasOwnProperty("screenName"))
+                                        item.screenName = root.screenName
                                 }
                             }
                         }
@@ -471,11 +484,11 @@ Item {
                 glass: true
                 visible: root.hasTabs && !root.glassTabs && root.effectiveMiddleLayout.length > 0
                 anchors.left: centerMaterialPill.right
-                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
-                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                anchors.top: !Config.barOption(root.__barScreen, "bottom") ? parent.top : undefined
+                anchors.bottom: Config.barOption(root.__barScreen, "bottom") ? parent.bottom : undefined
                 implicitSize: Appearance.rounding.screenRounding
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
+                corner: !Config.barOption(root.__barScreen, "bottom") ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
             }
 
             // Non-material layout
@@ -483,9 +496,9 @@ Item {
                 id: middleRow
                 visible: !root.useTabWrapper
                 anchors.fill: parent
-                spacing: Config.options.bar.borderless === "transparent" ? -7
-                    : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3
-                    : Config.options?.bar.borderless === "segmented" ? -1
+                spacing: Config.barOption(root.__barScreen, "borderless") === "transparent" ? -7
+                    : (Config.barOption(root.__barScreen, "borderless") === "segmented" && root.isPanel) ? 3
+                    : Config.barOption(root.__barScreen, "borderless") === "segmented" ? -1
                     : root.isPanel ? 4 : 2
 
                 Repeater {
@@ -496,6 +509,7 @@ Item {
                 Component {
                     id: middleBarGroupDelegate
                     BarGroup {
+                        screenName: root.screenName
                         Layout.fillHeight: true
                         currentIndex: index
                         widgetName: modelData
@@ -507,6 +521,8 @@ Item {
                             onLoaded: {
                                 if (item && item.hasOwnProperty("mirrored"))
                                     item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
+                                if (item && item.hasOwnProperty("screenName"))
+                                    item.screenName = root.screenName
                             }
                         }
                     }
@@ -516,11 +532,13 @@ Item {
                     id: middleNoGroupDelegate
                     Loader {
                         Layout.fillHeight: false
-                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
+                        Layout.topMargin: Config.barOption(root.__barScreen, "bottom") ? -5 : 3
                         source: root.getWidgetUrl(modelData)
                         onLoaded: {
                             if (item && item.hasOwnProperty("mirrored"))
                                 item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
+                            if (item && item.hasOwnProperty("screenName"))
+                                item.screenName = root.screenName
                         }
                     }
                 }
@@ -530,7 +548,7 @@ Item {
         // Right
         Item {
             anchors.right: parent.right
-            anchors.rightMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
+            anchors.rightMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Config.options.hyprland.general.gapsOut || 5) : (Config.barOption(root.__barScreen, "cornerStyle") === 1 ? 4 : Config.barOption(root.__barScreen, "cornerStyle") === 5 ? 4 : 8))
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.useTabWrapper ? (rightMaterialPill.width + (root.hasTabs && root.effectiveRightLayout.length > 0 ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
@@ -540,11 +558,11 @@ Item {
                 glass: true
                 visible: root.hasTabs && !root.glassTabs && root.effectiveRightLayout.length > 0
                 anchors.right: rightMaterialPill.left
-                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
-                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                anchors.top: !Config.barOption(root.__barScreen, "bottom") ? parent.top : undefined
+                anchors.bottom: Config.barOption(root.__barScreen, "bottom") ? parent.bottom : undefined
                 implicitSize: Appearance.rounding.screenRounding
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
+                corner: !Config.barOption(root.__barScreen, "bottom") ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
             }
 
             // Material pill wrapper
@@ -553,11 +571,11 @@ Item {
                 WindowGlass {
                     anchors.fill: parent
                     anchors.leftMargin: -root.tabFlare
-                    anchors.topMargin: Config.options.bar.bottom ? -root.tabFlare : 0
-                    anchors.bottomMargin: Config.options.bar.bottom ? 0 : -root.tabFlare
+                    anchors.topMargin: Config.barOption(root.__barScreen, "bottom") ? -root.tabFlare : 0
+                    anchors.bottomMargin: Config.barOption(root.__barScreen, "bottom") ? 0 : -root.tabFlare
                     flareLeft: root.tabFlare
                     hangRight: root.tabFlare
-                    edge: Config.options.bar.bottom ? 1 : 0
+                    edge: Config.barOption(root.__barScreen, "bottom") ? 1 : 0
                     glassEnabled: (parent?.fill.a ?? 0) > 0
                     cardRadius: parent?.radius ?? 0
                     topLeftRadius: parent && parent.topLeftRadius >= 0 ? parent.topLeftRadius : cardRadius
@@ -568,8 +586,8 @@ Item {
                 }
                 visible: root.useTabWrapper && root.effectiveRightLayout.length > 0
                 anchors.right: root.hasTabs ? parent.right : undefined
-                anchors.top: (root.hasTabs && !Config.options.bar.bottom) ? parent.top : undefined
-                anchors.bottom: (root.hasTabs && Config.options.bar.bottom) ? parent.bottom : undefined
+                anchors.top: (root.hasTabs && !Config.barOption(root.__barScreen, "bottom")) ? parent.top : undefined
+                anchors.bottom: (root.hasTabs && Config.barOption(root.__barScreen, "bottom")) ? parent.bottom : undefined
                 anchors.centerIn: root.hasTabs ? undefined : parent
                 width: rightMaterialRow.implicitWidth + (root.hasTabs ? 16 : 10)
                 height: root.hasTabs ? parent.height : rightMaterialRow.implicitHeight 
@@ -579,8 +597,8 @@ Item {
 
                 topRightRadius: root.hasTabs ? 0 : radius
                 bottomRightRadius: root.hasTabs ? 0 : radius
-                topLeftRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                bottomLeftRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topLeftRadius: (root.hasTabs && Config.barOption(root.__barScreen, "bottom")) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomLeftRadius: (root.hasTabs && !Config.barOption(root.__barScreen, "bottom")) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 RowLayout {
                     id: rightMaterialRow
@@ -595,6 +613,7 @@ Item {
                     Component {
                         id: rightMaterialGroupDelegate
                         BarGroup {
+                            screenName: root.screenName
                             Layout.fillHeight: true
                             currentIndex: index
                             widgetName: modelData
@@ -610,6 +629,8 @@ Item {
                                             item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
                                         } catch (e) {}
                                     }
+                                    if (item && item.hasOwnProperty("screenName"))
+                                        item.screenName = root.screenName
                                 }
                             }
                         }
@@ -622,9 +643,9 @@ Item {
                 id: rightRow
                 visible: !root.useTabWrapper
                 anchors.fill: parent
-                spacing: Config.options.bar.borderless === "transparent" ? -7
-                    : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3
-                    : Config.options?.bar.borderless === "segmented" ? -1
+                spacing: Config.barOption(root.__barScreen, "borderless") === "transparent" ? -7
+                    : (Config.barOption(root.__barScreen, "borderless") === "segmented" && root.isPanel) ? 3
+                    : Config.barOption(root.__barScreen, "borderless") === "segmented" ? -1
                     : root.isPanel ? 4 : 2
 
                 Repeater {
@@ -635,6 +656,7 @@ Item {
                 Component {
                     id: rightBarGroupDelegate
                     BarGroup {
+                        screenName: root.screenName
                         Layout.fillHeight: true
                         currentIndex: index
                         widgetName: modelData
@@ -648,6 +670,8 @@ Item {
                                         item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
                                     } catch (e) {}
                                 }
+                                if (item && item.hasOwnProperty("screenName"))
+                                    item.screenName = root.screenName
                             }
                         }
                     }
@@ -657,7 +681,7 @@ Item {
                     id: rightNoGroupDelegate
                     Loader {
                         Layout.fillHeight: false
-                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
+                        Layout.topMargin: Config.barOption(root.__barScreen, "bottom") ? -5 : 3
                         source: root.getWidgetUrl(modelData)
                         onLoaded: {
                             if (item && item.hasOwnProperty("mirrored")) {
@@ -665,6 +689,8 @@ Item {
                                     item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
                                 } catch (e) {}
                             }
+                            if (item && item.hasOwnProperty("screenName"))
+                                item.screenName = root.screenName
                         }
                     }
                 }

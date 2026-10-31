@@ -5,10 +5,12 @@ import QtQuick.Layouts
 
 Item {
     id: root
+    property string screenName: ""
+    readonly property string __barScreen: root.screenName !== "" ? root.screenName : (root.QsWindow.window?.screen?.name ?? "")
     property bool vertical: false
     property int currentIndex: 0
     property int totalCount: 0
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool isMaterial: Config.barOption(root.__barScreen, "cornerStyle") === 3 || Config.barOption(root.__barScreen, "cornerStyle") === 4
     property bool paintMaterialPill: false
     property bool paintBackground: true
     property color bgColor: Appearance.colors.colPrimaryContainer
@@ -22,7 +24,7 @@ Item {
     readonly property bool flatBL: (morphEdge === "bottom" && morphStartFlat) || (morphEdge === "left" && morphEndFlat)
     readonly property bool flatBR: (morphEdge === "bottom" || morphEdge === "right") && morphEndFlat
 
-    readonly property string borderlessMode: Config.options?.bar.borderless ?? "pills"
+    readonly property string borderlessMode: Config.barOption(root.__barScreen, "borderless") ?? "pills"
     readonly property bool styleEditable: !root.isMaterial && root.paintBackground && root.widgetName !== ""
     property var stylePreview: ({})
     readonly property var style: {
@@ -104,7 +106,7 @@ Item {
     }
 
     readonly property color resolvedGroupColor: {
-        const name = Config.options.bar.groupColor
+        const name = Config.barOption(root.__barScreen, "groupColor")
         const key = `col${name.charAt(0).toUpperCase()}${name.slice(1)}`
         return Appearance.colors[key] ?? Appearance.colors.colLayer1
     }
@@ -114,8 +116,8 @@ Item {
 
     property real padding: root.style?.padding ?? ((root.isMaterial && !root.paintMaterialPill) ? 0 : 5)
 
-    readonly property bool isSegmented: Config.options?.bar.borderless === "segmented"
-    readonly property bool isPanel: Config.options.bar.cornerStyle === 5
+    readonly property bool isSegmented: Config.barOption(root.__barScreen, "borderless") === "segmented"
+    readonly property bool isPanel: Config.barOption(root.__barScreen, "cornerStyle") === 5
     readonly property real panelRadius: Appearance.rounding.unsharpenmore + 4
 
     readonly property real fullRadius: root.isPanel ? root.panelRadius : height / 2
@@ -123,7 +125,7 @@ Item {
         ? root.panelRadius
         : root.isSegmented
             ? 0
-            : (Config.options.bar.cornerStyle === 2 ? Appearance.rounding.unsharpenmore + 2 : Appearance.rounding.unsharpenmore)
+            : (Config.barOption(root.__barScreen, "cornerStyle") === 2 ? Appearance.rounding.unsharpenmore + 2 : Appearance.rounding.unsharpenmore)
 
     property real startRadius: {
         if (totalCount <= 1) return fullRadius;
@@ -170,9 +172,9 @@ Item {
                 ? "transparent"
                 : (root.isMaterial && root.paintMaterialPill)
                     ? root.bgColor
-                    : (Config.options?.bar.borderless === "transparent"
+                    : (Config.barOption(root.__barScreen, "borderless") === "transparent"
                         ? "transparent"
-                        : Config.options.bar.cornerStyle === 2 || (Config.options?.bar.borderless === "segmented" && !Config.options.bar.showBackground)
+                        : Config.barOption(root.__barScreen, "cornerStyle") === 2 || (Config.barOption(root.__barScreen, "borderless") === "segmented" && !Config.barOption(root.__barScreen, "showBackground"))
                             ? Appearance.colors.colUiBackground
                             : root.resolvedGroupColor)
 
@@ -181,10 +183,10 @@ Item {
         border.width: root.morphEdge !== "" ? 0 : root.style?.borderWidth ?? (root.paintBackground && root.isSegmented && !root.isMaterial ? 1 : 0)
         border.color: root.resolveColorName(root.style?.borderColor) ?? Appearance.colors.colLayer0Border
 
-        topLeftRadius: root.flatTL ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.startRadius))
-        bottomLeftRadius: root.flatBL ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius))
-        topRightRadius: root.flatTR ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
-        bottomRightRadius: root.flatBR ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.endRadius))
+        topLeftRadius: root.flatTL ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.barOption(root.__barScreen, "borderless") === "separated" ? root.fullRadius : root.startRadius))
+        bottomLeftRadius: root.flatBL ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.barOption(root.__barScreen, "borderless") === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius))
+        topRightRadius: root.flatTR ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.barOption(root.__barScreen, "borderless") === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
+        bottomRightRadius: root.flatBR ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.barOption(root.__barScreen, "borderless") === "separated" ? root.fullRadius : root.endRadius))
 
         Behavior on color {
             enabled: root.morphEdge === ""

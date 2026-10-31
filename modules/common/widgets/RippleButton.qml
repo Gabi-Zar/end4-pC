@@ -24,6 +24,7 @@ Button {
     property var middleClickAction // When middle clicking
     property var altLongPressAction
     property bool altLongPressed: false
+    property int lastClickModifiers: Qt.NoModifier // Modifier keys (e.g. Qt.ControlModifier) held during the last accepted left click
     property bool border: false
     property real borderWidth: 1
     property color colBorder: Config.options.background.widgets.glass.enable
@@ -96,6 +97,7 @@ Button {
                 return;
             }
             if (event.button != Qt.LeftButton) return;
+            root.lastClickModifiers = event.modifiers
             if (root.releaseAction) root.releaseAction();
             root.click() // Because the MouseArea already consumed the event
             if (!root.rippleEnabled) return;

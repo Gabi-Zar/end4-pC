@@ -176,8 +176,9 @@ Item {
 
     readonly property string wallpaper: {
         const lockWall = Config.options.background.lockWall ?? ""
-        const path = GlobalStates.screenLocked && lockWall !== "" ? lockWall : Config.options.background.wallpaperPath
-        return /\.(mp4|webm|mkv|avi|mov)$/.test(path) ? Config.options.background.thumbnailPath : path
+        // wallpaperPath no longer exists (wallpapers are managed externally): only the lock wallpaper, if any, can back the glass
+        const path = GlobalStates.screenLocked && lockWall !== "" ? lockWall : (Config.options.background.wallpaperPath ?? "")
+        return /\.(mp4|webm|mkv|avi|mov)$/.test(path) ? (Config.options.background.thumbnailPath ?? "") : path
     }
 
     Loader {

@@ -23,13 +23,11 @@ import qs.modules.ii.sidebarLeft
 import qs.modules.ii.sidebarRight
 import qs.modules.ii.overlay
 import qs.modules.ii.verticalBar
-import qs.modules.ii.wallpaperSelector
-import qs.modules.ii.desktopMenu
 import qs.modules.ii.dropover
 import qs.modules.ii.frame
 
 Scope {
-    PanelLoader { extraCondition: !Config.options.bar.vertical; component: Bar {} }
+    PanelLoader { component: Bar {} }
     PanelLoader { component: Background {} }
     PanelLoader { extraCondition: Config.options.dock.enable; component: Dock {} }
     PanelLoader { component: EqualizerPopup {} }
@@ -47,10 +45,8 @@ Scope {
     PanelLoader { component: SessionScreen {} }
     PanelLoader { component: SidebarLeft {} }
     PanelLoader { component: SidebarRight {} }
-    PanelLoader { extraCondition: Config.options.bar.vertical; component: VerticalBar {} }
-    PanelLoader { component: WallpaperSelector {} }
+    PanelLoader { component: VerticalBar {} }
     PanelLoader { component: Settings {} }
-    PanelLoader { component: DesktopMenu {} }
     PanelLoader { extraCondition: GlobalStates.dropShelfOpen; component: DropShelfPanel {} }
     PanelLoader { component: NiriBackdrop {} }
     PanelLoader { component: ScreenFrame {} }

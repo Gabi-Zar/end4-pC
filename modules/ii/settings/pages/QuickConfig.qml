@@ -368,10 +368,9 @@ ContentPage {
 
         ContentSection {
             icon: "screenshot_monitor"
-            title: Translation.tr("Wallpaper & Colors")
+            title: Translation.tr("Colors")
             shape: MaterialShape.Shape.Puffy
             Layout.fillWidth: true
-            collapsible: false
 
             Rectangle {
                 id: mBox
@@ -386,9 +385,7 @@ ContentPage {
                     anchors.fill: parent
                     sourceSize.height: 1080
                     fillMode: Image.PreserveAspectCrop
-                    source: /\.(mp4|webm|mkv|avi|mov)$/i.test(Config.options.background.wallpaperPath)
-                        ? Config.options.background.thumbnailPath
-                        : Config.options.background.wallpaperPath
+                    source: "" // Inert placeholder: wallpapers are managed externally, but the glass controls below still use this item as their backdrop
                     cache: false
                     layer.enabled: true
                     layer.effect: OpacityMask {

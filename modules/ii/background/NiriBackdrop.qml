@@ -22,7 +22,8 @@ Variants {
             id: backdrop
             screen: loader.modelData
 
-            property string wallpaperPath: Config.options.background.wallpaperPath
+            // Native wallpaper rendering removed - skwd-wall (external) manages
+            // wallpapers now. This niri-only backdrop is kept inert/empty.
 
             WlrLayershell.layer: WlrLayer.Background
             WlrLayershell.namespace: "quickshell:wallpaper"
@@ -37,24 +38,6 @@ Variants {
                 bottom: true
                 left: true
                 right: true
-            }
-
-            Image {
-                id: sourceImage
-                anchors.fill: parent
-                source: backdrop.wallpaperPath
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
-                smooth: true
-                visible: false
-            }
-
-            FastBlur {
-                anchors.fill: parent
-                source: sourceImage
-                radius: 48 // fixme variable
-                transparentBorder: false
             }
         }
     }

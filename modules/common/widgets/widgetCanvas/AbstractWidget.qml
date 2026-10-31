@@ -22,7 +22,7 @@ MouseArea {
 
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     drag.target: draggable ? dragProxy : undefined
-    cursorShape: (draggable && containsPress) ? Qt.ClosedHandCursor : draggable ? Qt.OpenHandCursor : Qt.ArrowCursor
+    cursorShape: (draggable && root.containsPress) ? Qt.ClosedHandCursor : Qt.ArrowCursor
 
     onPressed: (mouse) => {
         if (mouse.button !== Qt.LeftButton) return
@@ -154,7 +154,7 @@ MouseArea {
 
     Rectangle {
         anchors.fill: parent
-        visible: root.selected && root.showSelectionBorder && !Config.options.background.widgetsLocked
+        visible: (root.dragging || root.groupDragActive) && root.showSelectionBorder && !Config.options.background.widgetsLocked
         color: "transparent"
         border.width: 2
         border.color: Appearance.colors.colPrimary
